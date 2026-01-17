@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  PYTHON_VERSION: "3.14"
+  PYTHON_VERSION: "3.11"
 
 jobs:
   lint:
@@ -89,7 +89,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.14"]
+        python-version: ["3.11"]
 
     steps:
       - uses: actions/checkout@v4
