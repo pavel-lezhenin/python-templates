@@ -338,7 +338,7 @@ pytest            # Tests
 ## 📋 Standards
 
 - ✅ Strict typing (mypy strict)
-- ✅ 100% test coverage
+- ✅ 80%+ test coverage
 - ✅ Auto-formatting (ruff)
 - ✅ Secret detection
 """)

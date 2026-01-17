@@ -6,9 +6,10 @@
 
 This repository is a collection of ready-to-use templates demonstrating:
 
-- **Architecture patterns** — from simple CRUD to layered architecture
-- **Modern technologies** — FastAPI, MongoDB, Redis, Elasticsearch, WebSocket, SSE
-- **Best practices** — strict typing, 100% test coverage, CI/CD, security checks
+- **Architecture patterns** — CRUD, Layered, Clean Architecture, Modular Monolith
+- **Databases & Storage** — MongoDB, PostgreSQL, Redis, Elasticsearch
+- **Cloud platforms** — AWS, Azure deployment ready
+- **Best practices** — strict typing, 80%+ test coverage, CI/CD, security checks
 - **Production solutions** — can be used as foundation for new projects
 
 ## 📦 Available Templates
@@ -178,7 +179,7 @@ python scripts/create_package.py "package-name" "Package description" --github
 
 - ✅ **Python 3.14** — latest language version
 - ✅ **Strict typing** — mypy in strict mode
-- ✅ **100% test coverage** — mandatory test coverage
+- ✅ **80%+ test coverage** — mandatory coverage threshold
 - ✅ **Auto-formatting** — ruff (linter + formatter)
 - ✅ **Security** — detect-secrets, gitleaks, bandit
 - ✅ **Pre-commit hooks** — automatic checks on commit

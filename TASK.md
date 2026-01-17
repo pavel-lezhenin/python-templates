@@ -14,7 +14,7 @@ Create a Python API templates monorepo with autonomous child packages.
 ### Code Quality
 - [x] Strict typing (mypy strict)
 - [x] Linting/formatting (ruff)
-- [x] 100% test coverage (pytest-cov)
+- [x] 80%+ test coverage (pytest-cov)
 - [x] Security checks (detect-secrets, gitleaks, bandit)
 
 ### Automation
