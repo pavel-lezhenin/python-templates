@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -12,6 +13,13 @@ from string import Template
 
 ROOT_DIR = Path(__file__).parent.parent
 PACKAGES_DIR = ROOT_DIR / "packages"
+
+# =============================================================================
+# Version Constants (single source of truth)
+# =============================================================================
+PYTHON_VERSION = "3.14"
+PYTHON_VERSION_SHORT = "py314"
+RUFF_VERSION = "v0.14.0"
 
 
 # =============================================================================
@@ -28,11 +36,11 @@ name = "$package_name"
 version = "0.1.0"
 description = "$description"
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=$python_version"
 license = "MIT"
 authors = [{ name = "Your Name", email = "your@email.com" }]
 classifiers = [
-    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: $python_version",
     "Typing :: Typed",
 ]
 
@@ -44,7 +52,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "ruff>=0.5.0",
+    "ruff>=0.14.0",
     "mypy>=1.11.0",
     "pytest>=8.0.0",
     "pytest-cov>=5.0.0",
@@ -61,7 +69,7 @@ packages = ["src/$module_name"]
 # RUFF
 # ==================================================
 [tool.ruff]
-target-version = "py314"
+target-version = "$python_version_short"
 line-length = 88
 
 [tool.ruff.format]
@@ -91,7 +99,7 @@ known-first-party = ["$module_name"]
 # MYPY
 # ==================================================
 [tool.mypy]
-python_version = "3.14"
+python_version = "$python_version"
 strict = true
 warn_return_any = true
 show_error_codes = true
@@ -143,7 +151,7 @@ exclude_dirs = ["tests"]
 skips = ["B101"]
 """)
 
-PRECOMMIT_TEMPLATE = """\
+PRECOMMIT_TEMPLATE = Template("""\
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.6.0
@@ -167,7 +175,7 @@ repos:
       - id: gitleaks
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.5.6
+    rev: $ruff_version
     hooks:
       - id: ruff
         args: ['--fix', '--exit-zero']
@@ -178,7 +186,7 @@ repos:
     hooks:
       - id: commitizen
         stages: [commit-msg]
-"""
+""")
 
 GITIGNORE_TEMPLATE = """\
 __pycache__/
@@ -227,7 +235,7 @@ SECRETS_BASELINE_TEMPLATE = """\
 }
 """
 
-CI_TEMPLATE = """\
+CI_TEMPLATE = Template("""\
 name: CI
 
 on:
@@ -236,6 +244,9 @@ on:
   pull_request:
     branches: [main]
 
+env:
+  PYTHON_VERSION: "$python_version"
+
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -243,7 +254,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.14"
+          python-version: $${{ env.PYTHON_VERSION }}
+          allow-prereleases: true
       - run: pip install ruff
       - run: ruff check .
       - run: ruff format --check .
@@ -254,7 +266,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.14"
+          python-version: $${{ env.PYTHON_VERSION }}
+          allow-prereleases: true
       - run: pip install -e ".[dev]"
       - run: mypy src
 
@@ -266,18 +279,16 @@ jobs:
       - run: bandit -r src -c pyproject.toml
       - uses: gitleaks/gitleaks-action@v2
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: $${{ secrets.GITHUB_TOKEN }}
 
   test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.14"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: $${{ env.PYTHON_VERSION }}
+          allow-prereleases: true
       - name: Install dependencies
         run: pip install -e ".[dev]"
       - name: Run tests
@@ -287,7 +298,7 @@ jobs:
         with:
           files: ./coverage.xml
           fail_ci_if_error: false
-"""
+""")
 
 README_TEMPLATE = Template("""\
 # $package_name
@@ -552,37 +563,8 @@ ${module_upper}_API_TIMEOUT=30.0
 # =============================================================================
 
 
-def create_package(
-    name: str,
-    description: str,
-    *,
-    init_git: bool = True,
-    create_remote: bool = False,
-) -> Path:
-    """Create a new package with all configurations.
-
-    Args:
-        name: Package name (e.g., 'openai-template').
-        description: Short package description.
-        init_git: Initialize git repository.
-        create_remote: Create GitHub repository.
-
-    Returns:
-        Path to created package.
-    """
-    module_name = name.replace("-", "_")
-    module_upper = module_name.upper()
-    package_dir = PACKAGES_DIR / name
-
-    if package_dir.exists():
-        print(f"Error: Package '{name}' already exists at {package_dir}")
-        sys.exit(1)
-
-    print(f"Creating package: {name}")
-    print(f"  Module name: {module_name}")
-    print(f"  Location: {package_dir}")
-
-    # Create directory structure
+def _create_directory_structure(package_dir: Path, module_name: str) -> None:
+    """Create package directory structure."""
     dirs = [
         package_dir / "src" / module_name,
         package_dir / "tests",
@@ -591,27 +573,21 @@ def create_package(
     for d in dirs:
         d.mkdir(parents=True, exist_ok=True)
 
-    # Template variables
-    template_vars = {
-        "package_name": name,
-        "module_name": module_name,
-        "module_upper": module_upper,
-        "description": description,
-    }
 
-    # Create files
+def _write_package_files(package_dir: Path, template_vars: dict[str, str]) -> None:
+    """Write all package files from templates."""
+    module_name = template_vars["module_name"]
     files = {
         "pyproject.toml": PYPROJECT_TEMPLATE.substitute(template_vars),
-        ".pre-commit-config.yaml": PRECOMMIT_TEMPLATE,
+        ".pre-commit-config.yaml": PRECOMMIT_TEMPLATE.substitute(template_vars),
         ".gitignore": GITIGNORE_TEMPLATE,
         ".secrets.baseline": SECRETS_BASELINE_TEMPLATE,
-        ".github/workflows/ci.yml": CI_TEMPLATE,
+        ".github/workflows/ci.yml": CI_TEMPLATE.substitute(template_vars),
         "README.md": README_TEMPLATE.substitute(template_vars),
         ".env.example": ENV_EXAMPLE_TEMPLATE.substitute(template_vars),
         f"src/{module_name}/__init__.py": INIT_TEMPLATE.substitute(template_vars),
         f"src/{module_name}/py.typed": "",
         f"src/{module_name}/client.py": CLIENT_TEMPLATE.substitute(template_vars),
-        "tests/__init__.py": '"""Tests package."""\n',
         "tests/conftest.py": CONFTEST_TEMPLATE,
         "tests/test_client.py": TEST_CLIENT_TEMPLATE.substitute(template_vars),
     }
@@ -621,37 +597,162 @@ def create_package(
         file_path.write_text(content, encoding="utf-8")
         print(f"  Created: {filepath}")
 
-    # Initialize git
-    if init_git:
-        print("\nInitializing git repository...")
-        subprocess.run(["git", "init"], cwd=package_dir, check=True)
-        subprocess.run(["git", "add", "-A"], cwd=package_dir, check=True)
-        subprocess.run(
-            ["git", "commit", "-m", "feat: initial package setup", "--no-verify"],
-            cwd=package_dir,
-            check=True,
-        )
-        print("  Git initialized with initial commit")
 
-    # Create GitHub repository
+def _init_git_repo(package_dir: Path) -> None:
+    """Initialize git repository with initial commit."""
+    print("\nInitializing git repository...")
+    subprocess.run(["git", "init"], cwd=package_dir, check=True, capture_output=True)
+    subprocess.run(
+        ["git", "add", "-A"], cwd=package_dir, check=True, capture_output=True
+    )
+    subprocess.run(
+        ["git", "commit", "-m", "feat: initial package setup", "--no-verify"],
+        cwd=package_dir,
+        check=True,
+        capture_output=True,
+    )
+    print("  Git initialized with initial commit")
+
+
+def _create_github_and_submodule(
+    name: str, package_dir: Path, github_user: str, github_url: str
+) -> bool:
+    """Create GitHub repo and register as submodule."""
+    print("\nCreating GitHub repository...")
+    result = subprocess.run(
+        [
+            "gh",
+            "repo",
+            "create",
+            f"{github_user}/{name}",
+            "--public",
+            "--source=.",
+            "--push",
+        ],
+        cwd=package_dir,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        print(f"  Warning: Could not create GitHub repo: {result.stderr}")
+        print("  Package created locally without submodule registration")
+        return False
+
+    print(f"  GitHub repository created: {github_url}")
+
+    # Remove local .git and re-add as submodule
+    print("\nRegistering as git submodule...")
+    git_dir = package_dir / ".git"
+    if git_dir.exists():
+        shutil.rmtree(git_dir)
+    shutil.rmtree(package_dir)
+
+    # Add as submodule from parent repo
+    subprocess.run(
+        ["git", "submodule", "add", github_url, f"packages/{name}"],
+        cwd=ROOT_DIR,
+        check=True,
+        capture_output=True,
+    )
+    print(f"  Submodule registered: packages/{name}")
+
+    # Commit submodule addition
+    subprocess.run(
+        ["git", "add", ".gitmodules", f"packages/{name}"],
+        cwd=ROOT_DIR,
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        [
+            "git",
+            "commit",
+            "-m",
+            f"feat: add {name} package as submodule",
+            "--no-verify",
+        ],
+        cwd=ROOT_DIR,
+        check=True,
+        capture_output=True,
+    )
+    print("  Submodule committed to main repository")
+    return True
+
+
+def create_package(
+    name: str,
+    description: str,
+    *,
+    init_git: bool = True,
+    create_remote: bool = False,
+    github_user: str = "pavel-lezhenin",
+) -> Path:
+    """Create a new package with all configurations.
+
+    Args:
+        name: Package name (e.g., 'openai-template').
+        description: Short package description.
+        init_git: Initialize git repository.
+        create_remote: Create GitHub repository and add as submodule.
+        github_user: GitHub username for repository URL.
+
+    Returns:
+        Path to created package.
+    """
+    module_name = name.replace("-", "_")
+    module_upper = module_name.upper()
+    package_dir = PACKAGES_DIR / name
+    github_url = f"https://github.com/{github_user}/{name}.git"
+
+    if package_dir.exists():
+        print(f"Error: Package '{name}' already exists at {package_dir}")
+        sys.exit(1)
+
+    print(f"Creating package: {name}")
+    print(f"  Module name: {module_name}")
+    print(f"  Location: {package_dir}")
+
+    _create_directory_structure(package_dir, module_name)
+
+    template_vars = {
+        "package_name": name,
+        "module_name": module_name,
+        "module_upper": module_upper,
+        "description": description,
+        "python_version": PYTHON_VERSION,
+        "python_version_short": PYTHON_VERSION_SHORT,
+        "ruff_version": RUFF_VERSION,
+    }
+
+    _write_package_files(package_dir, template_vars)
+
+    if init_git:
+        _init_git_repo(package_dir)
+
+    submodule_created = False
     if create_remote:
-        print("\nCreating GitHub repository...")
-        result = subprocess.run(
-            ["gh", "repo", "create", name, "--public", "--source=.", "--push"],
-            cwd=package_dir,
-            capture_output=True,
-            text=True,
+        submodule_created = _create_github_and_submodule(
+            name, package_dir, github_user, github_url
         )
-        if result.returncode == 0:
-            print("  GitHub repository created and pushed")
-        else:
-            print(f"  Warning: Could not create GitHub repo: {result.stderr}")
 
     print(f"\n✅ Package '{name}' created successfully!")
-    print("\nNext steps:")
-    print(f"  cd packages/{name}")
-    print("  pip install -e '.[dev]'")
-    print("  pre-commit install")
+    if submodule_created:
+        print(f"\nGitHub: {github_url.replace('.git', '')}")
+        print("\nNext steps:")
+        print(f"  cd packages/{name}")
+        print("  pip install -e '.[dev]'")
+        print("  pre-commit install")
+        print("\n  # Push main repo to update submodule reference:")
+        print("  cd ../..")
+        print("  git push")
+    else:
+        print("\nNext steps:")
+        print(f"  cd packages/{name}")
+        print("  pip install -e '.[dev]'")
+        print("  pre-commit install")
+        if not create_remote:
+            print("\n  # To publish as submodule later:")
+            print(f'  python scripts/create_package.py {name} "{description}" --github')
 
     return package_dir
 
@@ -664,7 +765,8 @@ def main() -> int:
         epilog="""\
 Examples:
   python scripts/create_package.py openai-client "OpenAI API client"
-  python scripts/create_package.py anthropic-sdk "Anthropic SDK wrapper" --github
+  python scripts/create_package.py anthropic-sdk "Anthropic SDK" --github
+  python scripts/create_package.py my-pkg "My package" --github --user myname
         """,
     )
     parser.add_argument(
@@ -683,7 +785,12 @@ Examples:
     parser.add_argument(
         "--github",
         action="store_true",
-        help="Create GitHub repository and push",
+        help="Create GitHub repository and register as submodule",
+    )
+    parser.add_argument(
+        "--user",
+        default="pavel-lezhenin",
+        help="GitHub username (default: pavel-lezhenin)",
     )
 
     args = parser.parse_args()
@@ -693,6 +800,7 @@ Examples:
         args.description,
         init_git=not args.no_git,
         create_remote=args.github,
+        github_user=args.user,
     )
 
     return 0
