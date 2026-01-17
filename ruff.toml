@@ -1,5 +1,5 @@
 # Ruff configuration - shared across all packages
-target-version = "py311"
+target-version = "py314"
 line-length = 88
 indent-width = 4
 

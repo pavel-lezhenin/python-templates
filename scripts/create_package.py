@@ -28,12 +28,11 @@ name = "$package_name"
 version = "0.1.0"
 description = "$description"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.14"
 license = "MIT"
 authors = [{ name = "Your Name", email = "your@email.com" }]
 classifiers = [
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.14",
     "Typing :: Typed",
 ]
 
@@ -62,7 +61,7 @@ packages = ["src/$module_name"]
 # RUFF
 # ==================================================
 [tool.ruff]
-target-version = "py311"
+target-version = "py314"
 line-length = 88
 
 [tool.ruff.format]
@@ -92,7 +91,7 @@ known-first-party = ["$module_name"]
 # MYPY
 # ==================================================
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.14"
 strict = true
 warn_return_any = true
 show_error_codes = true
@@ -244,7 +243,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.14"
       - run: pip install ruff
       - run: ruff check .
       - run: ruff format --check .
@@ -255,7 +254,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.14"
       - run: pip install -e ".[dev]"
       - run: mypy src
 
@@ -273,7 +272,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.11", "3.12"]
+        python-version: ["3.14"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
