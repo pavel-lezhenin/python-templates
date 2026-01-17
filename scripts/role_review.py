@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Final
 
+
 if TYPE_CHECKING:
     from collections.abc import Callable
 
@@ -35,7 +36,7 @@ class Issue:
 def get_changed_files() -> list[Path]:
     """Get list of staged Python files."""
     result = subprocess.run(
-        ["git", "diff", "--cached", "--name-only", "--diff-filter=ACM"],  # noqa: S607
+        ["git", "diff", "--cached", "--name-only", "--diff-filter=ACM"],
         capture_output=True,
         text=True,
         check=True,
@@ -128,9 +129,7 @@ def check_reviewer(file: Path, tree: ast.AST, lines: list[str]) -> list[Issue]:
         if stripped.startswith("#") and any(
             kw in stripped for kw in ["def ", "class ", "import ", "return "]
         ):
-            issues.append(
-                Issue("reviewer", str(file), i, "Remove commented-out code")
-            )
+            issues.append(Issue("reviewer", str(file), i, "Remove commented-out code"))
 
         if "TODO" in line and "TODO(" not in line:
             issues.append(
@@ -203,7 +202,22 @@ def check_best_practice(file: Path, tree: ast.AST, lines: list[str]) -> list[Iss
 
         if (
             isinstance(node, ast.Call)
-            and isinstance(node.func, ast.Name)_lines: list[str]) -> list[Issue]:
+            and isinstance(node.func, ast.Name)
+            and node.func.id in ("eval", "exec")
+        ):
+            issues.append(
+                Issue(
+                    "best_practice",
+                    str(file),
+                    node.lineno,
+                    f"Avoid {node.func.id}() — security risk",
+                )
+            )
+
+    return issues
+
+
+def check_architect(file: Path, tree: ast.AST, _lines: list[str]) -> list[Issue]:
     """Architect role: structure and design."""
     issues: list[Issue] = []
     classes = [n for n in ast.walk(tree) if isinstance(n, ast.ClassDef)]
@@ -240,7 +254,8 @@ def check_best_practice(file: Path, tree: ast.AST, lines: list[str]) -> list[Iss
                 "architect",
                 str(file),
                 1,
-                f"Too many imports: {len(imports)} > {MAX_IMPORTS} — consider splitting",
+                f"Too many imports: {len(imports)} > {MAX_IMPORTS} \u2014 consider "
+                f"splitting",
             )
         )
 
@@ -248,21 +263,6 @@ def check_best_practice(file: Path, tree: ast.AST, lines: list[str]) -> list[Iss
     has_api_routes = any(
         "router" in line.lower() or "@app." in line or "APIRouter" in line
         for line in file.read_text(encoding="utf-8").splitlines()
-    imports = [n for n in ast.walk(tree) if isinstance(n, ast.Import | ast.ImportFrom)]
-    if len(imports) > 15:
-        issues.append(
-            Issue(
-                "architect",
-                str(file),
-                1,
-                f"Too many imports: {len(imports)} — consider splitting module",
-            )
-        )
-
-    # Check for OpenAPI spec in packages with API routes
-    has_api_routes = any(
-        "router" in line.lower() or "@app." in line or "APIRouter" in line
-        for line in lines
     )
     if has_api_routes:
         package_root = file.parent

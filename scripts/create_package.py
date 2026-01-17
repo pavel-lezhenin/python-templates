@@ -18,7 +18,7 @@ PACKAGES_DIR = ROOT_DIR / "packages"
 # Templates
 # =============================================================================
 
-PYPROJECT_TEMPLATE = Template('''\
+PYPROJECT_TEMPLATE = Template("""\
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
@@ -142,9 +142,9 @@ exclude_lines = [
 [tool.bandit]
 exclude_dirs = ["tests"]
 skips = ["B101"]
-''')
+""")
 
-PRECOMMIT_TEMPLATE = '''\
+PRECOMMIT_TEMPLATE = """\
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.6.0
@@ -179,9 +179,9 @@ repos:
     hooks:
       - id: commitizen
         stages: [commit-msg]
-'''
+"""
 
-GITIGNORE_TEMPLATE = '''\
+GITIGNORE_TEMPLATE = """\
 __pycache__/
 *.py[cod]
 .venv/
@@ -203,9 +203,9 @@ htmlcov/
 .vscode/
 .DS_Store
 Thumbs.db
-'''
+"""
 
-SECRETS_BASELINE_TEMPLATE = '''\
+SECRETS_BASELINE_TEMPLATE = """\
 {
   "version": "1.5.0",
   "plugins_used": [
@@ -226,9 +226,9 @@ SECRETS_BASELINE_TEMPLATE = '''\
   "results": {},
   "generated_at": "2026-01-17T00:00:00Z"
 }
-'''
+"""
 
-CI_TEMPLATE = '''\
+CI_TEMPLATE = """\
 name: CI
 
 on:
@@ -281,9 +281,9 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - run: pip install -e ".[dev]"
       - run: pytest --cov --cov-fail-under=100
-'''
+"""
 
-README_TEMPLATE = Template('''\
+README_TEMPLATE = Template("""\
 # $package_name
 
 $description
@@ -325,7 +325,7 @@ pytest            # Tests
 - ✅ 100% test coverage
 - ✅ Auto-formatting (ruff)
 - ✅ Secret detection
-''')
+""")
 
 INIT_TEMPLATE = Template('''\
 """$description"""
@@ -532,18 +532,19 @@ class TestClient:
             await client.get("/test")
 ''')
 
-ENV_EXAMPLE_TEMPLATE = Template('''\
+ENV_EXAMPLE_TEMPLATE = Template("""\
 # $package_name Configuration
 # Copy to .env and fill in values
 
 ${module_upper}_API_BASE_URL=https://api.example.com
 ${module_upper}_API_TIMEOUT=30.0
-''')
+""")
 
 
 # =============================================================================
 # Package Creation
 # =============================================================================
+
 
 def create_package(
     name: str,
@@ -636,15 +637,15 @@ def create_package(
             text=True,
         )
         if result.returncode == 0:
-            print(f"  GitHub repository created and pushed")
+            print("  GitHub repository created and pushed")
         else:
             print(f"  Warning: Could not create GitHub repo: {result.stderr}")
 
     print(f"\n✅ Package '{name}' created successfully!")
-    print(f"\nNext steps:")
+    print("\nNext steps:")
     print(f"  cd packages/{name}")
-    print(f"  pip install -e '.[dev]'")
-    print(f"  pre-commit install")
+    print("  pip install -e '.[dev]'")
+    print("  pre-commit install")
 
     return package_dir
 

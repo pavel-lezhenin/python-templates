@@ -65,7 +65,7 @@ class TestAPIClient:
         with pytest.raises(ValueError, match="test error"):
             async with APIClient(base_url) as client:
                 assert client.client is not None
-                raise ValueError("test error")
+                raise ValueError("test error")  # noqa: EM101, TRY003
 
     @pytest.mark.asyncio
     async def test_get_success(self, base_url: str, httpx_mock: HTTPXMock) -> None:
