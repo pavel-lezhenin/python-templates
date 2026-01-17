@@ -51,3 +51,14 @@ submodule-update: ## Update all submodules
 
 submodule-init: ## Initialize all submodules
 	git submodule update --init --recursive
+
+# ===========================================
+# Package creation
+# ===========================================
+new: ## Create new package (NAME=<name> DESC=<description>)
+	@if [ -z "$(NAME)" ]; then echo "Usage: make new NAME=package-name DESC='description'"; exit 1; fi
+	python scripts/create_package.py "$(NAME)" "$(DESC)"
+
+new-github: ## Create new package with GitHub repo (NAME=<name> DESC=<description>)
+	@if [ -z "$(NAME)" ]; then echo "Usage: make new-github NAME=package-name DESC='description'"; exit 1; fi
+	python scripts/create_package.py "$(NAME)" "$(DESC)" --github
