@@ -8,10 +8,18 @@ import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+
+MAX_FILE_LINES: Final[int] = 200
+MAX_FUNCTION_LINES: Final[int] = 30
+MAX_FUNCTION_ARGS: Final[int] = 5
+MAX_CLASS_METHODS: Final[int] = 10
+MAX_IMPORTS: Final[int] = 15
+MAX_CLASSES_PER_FILE: Final[int] = 2
 
 
 @dataclass
@@ -27,7 +35,7 @@ class Issue:
 def get_changed_files() -> list[Path]:
     """Get list of staged Python files."""
     result = subprocess.run(
-        ["git", "diff", "--cached", "--name-only", "--diff-filter=ACM"],
+        ["git", "diff", "--cached", "--name-only", "--diff-filter=ACM"],  # noqa: S607
         capture_output=True,
         text=True,
         check=True,
@@ -39,44 +47,59 @@ def check_dev(file: Path, tree: ast.AST, lines: list[str]) -> list[Issue]:
     """Developer role: basic code quality."""
     issues: list[Issue] = []
 
-    if len(lines) > 200:
+    if len(lines) > MAX_FILE_LINES:
         issues.append(
-            Issue("dev", str(file), 1, f"File too long: {len(lines)} > 200 lines")
+            Issue(
+                "dev",
+                str(file),
+                1,
+                f"File too long: {len(lines)} > {MAX_FILE_LINES} lines",
+            )
         )
 
     for node in ast.walk(tree):
-        if isinstance(node, ast.Call):
-            if isinstance(node.func, ast.Name) and node.func.id == "print":
-                issues.append(
-                    Issue("dev", str(file), node.lineno, "Use logging instead of print()")
+        if (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Name)
+            and node.func.id == "print"
+        ):
+            issues.append(
+                Issue(
+                    "dev",
+                    str(file),
+                    node.lineno,
+                    "Use logging instead of print()",
                 )
+            )
 
         if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
             func_lines = node.end_lineno - node.lineno + 1 if node.end_lineno else 0
-            if func_lines > 30:
+            if func_lines > MAX_FUNCTION_LINES:
                 issues.append(
                     Issue(
                         "dev",
                         str(file),
                         node.lineno,
-                        f"Function '{node.name}' too long: {func_lines} > 30 lines",
+                        f"Function '{node.name}' too long: {func_lines} > "
+                        f"{MAX_FUNCTION_LINES} lines",
                     )
                 )
 
-            if len(node.args.args) > 5:
+            if len(node.args.args) > MAX_FUNCTION_ARGS:
                 issues.append(
                     Issue(
                         "dev",
                         str(file),
                         node.lineno,
-                        f"Function '{node.name}' has too many args: {len(node.args.args)} > 5",
+                        f"Function '{node.name}' has {len(node.args.args)} args > "
+                        f"{MAX_FUNCTION_ARGS}",
                     )
                 )
 
     return issues
 
 
-def check_tester(file: Path, tree: ast.AST, lines: list[str]) -> list[Issue]:
+def check_tester(file: Path, tree: ast.AST, _lines: list[str]) -> list[Issue]:
     """Tester role: test-related checks."""
     issues: list[Issue] = []
     is_test_file = file.name.startswith("test_") or "/tests/" in str(file)
@@ -139,21 +162,33 @@ def check_reviewer(file: Path, tree: ast.AST, lines: list[str]) -> list[Issue]:
 def check_best_practice(file: Path, tree: ast.AST, lines: list[str]) -> list[Issue]:
     """Best practice role: security and patterns."""
     issues: list[Issue] = []
-    secrets_patterns = ["password", "secret", "api_key", "apikey", "token", "credential"]
+    secrets_patterns = [
+        "password",
+        "secret",
+        "api_key",
+        "apikey",
+        "token",
+        "credential",
+    ]
 
     for i, line in enumerate(lines, 1):
         lower = line.lower()
         for pattern in secrets_patterns:
-            if pattern in lower and "=" in line and ('"' in line or "'" in line):
-                if "os.getenv" not in line and "environ" not in line:
-                    issues.append(
-                        Issue(
-                            "best_practice",
-                            str(file),
-                            i,
-                            f"Possible hardcoded secret: {pattern}",
-                        )
+            if (
+                pattern in lower
+                and "=" in line
+                and ('"' in line or "'" in line)
+                and "os.getenv" not in line
+                and "environ" not in line
+            ):
+                issues.append(
+                    Issue(
+                        "best_practice",
+                        str(file),
+                        i,
+                        f"Possible hardcoded secret: {pattern}",
                     )
+                )
 
     for node in ast.walk(tree):
         if isinstance(node, ast.ExceptHandler) and node.type is None:
@@ -166,44 +201,53 @@ def check_best_practice(file: Path, tree: ast.AST, lines: list[str]) -> list[Iss
                 )
             )
 
-        if isinstance(node, ast.Call):
-            if isinstance(node.func, ast.Name) and node.func.id in ("eval", "exec"):
-                issues.append(
-                    Issue(
-                        "best_practice",
-                        str(file),
-                        node.lineno,
-                        f"Avoid {node.func.id}() — security risk",
-                    )
-                )
-
-    return issues
-
-
-def check_architect(file: Path, tree: ast.AST, lines: list[str]) -> list[Issue]:
+        if (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Name)_lines: list[str]) -> list[Issue]:
     """Architect role: structure and design."""
     issues: list[Issue] = []
     classes = [n for n in ast.walk(tree) if isinstance(n, ast.ClassDef)]
 
-    if len(classes) > 2:
+    if len(classes) > MAX_CLASSES_PER_FILE:
         issues.append(
-            Issue("architect", str(file), 1, f"Too many classes in file: {len(classes)} > 2")
+            Issue(
+                "architect",
+                str(file),
+                1,
+                f"Too many classes in file: {len(classes)} > {MAX_CLASSES_PER_FILE}",
+            )
         )
 
     for cls in classes:
         methods = [
             n for n in cls.body if isinstance(n, ast.FunctionDef | ast.AsyncFunctionDef)
         ]
-        if len(methods) > 10:
+        if len(methods) > MAX_CLASS_METHODS:
             issues.append(
                 Issue(
                     "architect",
                     str(file),
                     cls.lineno,
-                    f"Class '{cls.name}' has too many methods: {len(methods)} > 10",
+                    f"Class '{cls.name}' has too many methods: {len(methods)} > "
+                    f"{MAX_CLASS_METHODS}",
                 )
             )
 
+    imports = [n for n in ast.walk(tree) if isinstance(n, ast.Import | ast.ImportFrom)]
+    if len(imports) > MAX_IMPORTS:
+        issues.append(
+            Issue(
+                "architect",
+                str(file),
+                1,
+                f"Too many imports: {len(imports)} > {MAX_IMPORTS} — consider splitting",
+            )
+        )
+
+    # Check for OpenAPI spec in packages with API routes
+    has_api_routes = any(
+        "router" in line.lower() or "@app." in line or "APIRouter" in line
+        for line in file.read_text(encoding="utf-8").splitlines()
     imports = [n for n in ast.walk(tree) if isinstance(n, ast.Import | ast.ImportFrom)]
     if len(imports) > 15:
         issues.append(

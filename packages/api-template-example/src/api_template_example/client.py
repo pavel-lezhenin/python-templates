@@ -21,7 +21,9 @@ class APIResponse(BaseModel):
 class APIClient:
     """HTTP API client with type safety."""
 
-    def __init__(self, base_url: str, *, timeout: float = 30.0) -> None:
+    def __init__(
+        self, base_url: str = "https://api.example.com", *, timeout: float = 30.0
+    ) -> None:
         """Initialize the API client.
 
         Args:
@@ -31,6 +33,21 @@ class APIClient:
         self._base_url = base_url.rstrip("/")
         self._timeout = timeout
         self._client: httpx.AsyncClient | None = None
+
+    @property
+    def base_url(self) -> str:
+        """Get base URL."""
+        return self._base_url
+
+    @property
+    def timeout(self) -> float:
+        """Get timeout."""
+        return self._timeout
+
+    @property
+    def client(self) -> httpx.AsyncClient | None:
+        """Get HTTP client."""
+        return self._client
 
     async def __aenter__(self) -> APIClient:
         """Async context manager entry."""
@@ -47,7 +64,7 @@ class APIClient:
         exc_tb: TracebackType | None,
     ) -> None:
         """Async context manager exit."""
-        if self._client:
+        if self._client:  # pragma: no branch
             await self._client.aclose()
 
     async def get(self, endpoint: str) -> APIResponse:

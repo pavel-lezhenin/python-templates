@@ -76,7 +76,7 @@ select = [
     "DTZ", "T10", "EM", "LOG", "G", "PIE", "T20", "Q", "RSE", "RET",
     "SLF", "SLOT", "TID", "TRY", "FLY",
 ]
-ignore = ["D100", "D104", "D107", "ANN101", "ANN102", "COM812"]
+ignore = ["D100", "D104", "D107", "COM812"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*.py" = ["S101", "ANN", "D", "PLR2004"]
