@@ -15,6 +15,14 @@
 - With GitHub: `make new-github NAME=<name> DESC="<description>"`
 - This ensures all base configurations are applied automatically
 
+## API Standards
+
+- **STRICT: OpenAPI/Swagger required** — every API service must have OpenAPI spec
+- Place spec in `openapi.yaml` or `openapi.json` at package root
+- Use FastAPI with automatic OpenAPI generation when possible
+- Missing OpenAPI spec = architecture error
+- Document all endpoints, request/response schemas, error codes
+
 ## Python Paradigm
 
 - Use **Python 3.11+** features

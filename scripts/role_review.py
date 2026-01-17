@@ -215,6 +215,33 @@ def check_architect(file: Path, tree: ast.AST, lines: list[str]) -> list[Issue]:
             )
         )
 
+    # Check for OpenAPI spec in packages with API routes
+    has_api_routes = any(
+        "router" in line.lower() or "@app." in line or "APIRouter" in line
+        for line in lines
+    )
+    if has_api_routes:
+        package_root = file.parent
+        while package_root.name != "packages" and package_root != package_root.parent:
+            if (package_root / "pyproject.toml").exists():
+                break
+            package_root = package_root.parent
+
+        openapi_exists = (
+            (package_root / "openapi.yaml").exists()
+            or (package_root / "openapi.json").exists()
+            or (package_root / "openapi.yml").exists()
+        )
+        if not openapi_exists and package_root.name != "packages":
+            issues.append(
+                Issue(
+                    "architect",
+                    str(file),
+                    1,
+                    "API routes found but no openapi.yaml/json — architecture error",
+                )
+            )
+
     return issues
 
 
@@ -224,6 +251,14 @@ ROLES: dict[str, Callable[[Path, ast.AST, list[str]], list[Issue]]] = {
     "reviewer": check_reviewer,
     "best_practice": check_best_practice,
     "architect": check_architect,
+}
+
+ROLE_ICONS: dict[str, str] = {
+    "dev": "👨‍💻",
+    "tester": "🧪",
+    "reviewer": "👀",
+    "best_practice": "✨",
+    "architect": "🏗️",
 }
 
 
@@ -252,9 +287,11 @@ def main() -> int:
 
     if all_issues:
         print("\n❌ Role Review Issues:\n")
-        for issue in sorted(all_issues, key=lambda x: (x.file, x.line)):
-            print(f"  [{issue.role}] {issue.file}:{issue.line} — {issue.message}")
-        print(f"\n{len(all_issues)} issue(s) found.\n")
+        for issue in sorted(all_issues, key=lambda x: (x.role, x.file, x.line)):
+            icon = ROLE_ICONS.get(issue.role, "•")
+            print(f"  {icon} [{issue.role}] {issue.file}:{issue.line}")
+            print(f"      {issue.message}\n")
+        print(f"Total: {len(all_issues)} issue(s)\n")
         return 1
 
     print("✅ All role checks passed.")
