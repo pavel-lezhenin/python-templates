@@ -124,7 +124,6 @@ addopts = [
     "--tb=short",
     "--cov=src",
     "--cov-report=term-missing",
-    "--cov-fail-under=100",
 ]
 asyncio_mode = "auto"
 
@@ -137,7 +136,7 @@ branch = true
 omit = ["**/tests/*", "**/__init__.py"]
 
 [tool.coverage.report]
-fail_under = 100
+fail_under = 80
 show_missing = true
 exclude_lines = [
     "pragma: no cover",
@@ -450,8 +449,8 @@ class Client:
         return Response(status="ok", data=response.json())
 ''')
 
-CONFTEST_TEMPLATE = '''\
-"""Pytest configuration and fixtures."""
+CONFTEST_UNIT_TEMPLATE = '''\
+"""Pytest configuration and fixtures for unit tests."""
 
 from __future__ import annotations
 
@@ -462,6 +461,25 @@ import pytest
 def base_url() -> str:
     """Provide test base URL."""
     return "https://api.example.com"
+'''
+
+CONFTEST_INTEGRATION_TEMPLATE = '''\
+"""Pytest configuration and fixtures for integration tests."""
+
+from __future__ import annotations
+
+import pytest
+
+
+# Add testcontainers fixtures here when needed
+# Example:
+# from testcontainers.postgres import PostgresContainer
+#
+# @pytest.fixture(scope="session")
+# def postgres_container():
+#     """Start PostgreSQL container for integration tests."""
+#     with PostgresContainer("postgres:16") as container:
+#         yield container
 '''
 
 TEST_CLIENT_TEMPLATE = Template('''\
@@ -588,12 +606,17 @@ def _write_package_files(package_dir: Path, template_vars: dict[str, str]) -> No
         f"src/{module_name}/__init__.py": INIT_TEMPLATE.substitute(template_vars),
         f"src/{module_name}/py.typed": "",
         f"src/{module_name}/client.py": CLIENT_TEMPLATE.substitute(template_vars),
-        "tests/conftest.py": CONFTEST_TEMPLATE,
-        "tests/test_client.py": TEST_CLIENT_TEMPLATE.substitute(template_vars),
+        "tests/__init__.py": "",
+        "tests/unit/__init__.py": "",
+        "tests/unit/conftest.py": CONFTEST_UNIT_TEMPLATE,
+        "tests/unit/test_client.py": TEST_CLIENT_TEMPLATE.substitute(template_vars),
+        "tests/integration/__init__.py": "",
+        "tests/integration/conftest.py": CONFTEST_INTEGRATION_TEMPLATE,
     }
 
     for filepath, content in files.items():
         file_path = package_dir / filepath
+        file_path.parent.mkdir(parents=True, exist_ok=True)
         file_path.write_text(content, encoding="utf-8")
         print(f"  Created: {filepath}")
 

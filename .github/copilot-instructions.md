@@ -78,7 +78,18 @@ src/package_name/
 
 ## Testing
 
-- 100% coverage required
-- One test file per source file
-- Use fixtures, avoid duplication
+### Test Structure
+
+- **Separate unit and integration tests** — use `tests/unit/` and `tests/integration/` directories
+- **Unit tests** (`tests/unit/`) — use mocks, no external dependencies, fast execution
+- **Integration tests** (`tests/integration/`) — use testcontainers, test real integrations
+- Each directory has its own `conftest.py` with appropriate fixtures
 - Test file naming: `test_<module>.py`
+
+### Coverage Requirements
+
+- **Minimum: 80%** (`fail_under = 80`) — CI fails below this
+- **Target: 90%** — aim for this in practice
+- **100% not always practical** — focus on critical paths and business logic
+- Use fixtures, avoid duplication
+- One test file per source file structure
