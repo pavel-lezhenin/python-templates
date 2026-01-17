@@ -1,0 +1,60 @@
+repos:
+  # ===========================================
+  # General
+  # ===========================================
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-added-large-files
+        args: ['--maxkb=500']
+      - id: check-merge-conflict
+      - id: detect-private-key
+
+  # ===========================================
+  # Security
+  # ===========================================
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        args: ['--baseline', '.secrets.baseline']
+
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.4
+    hooks:
+      - id: gitleaks
+
+  # ===========================================
+  # Python formatting (silent auto-fix)
+  # ===========================================
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.5.6
+    hooks:
+      - id: ruff
+        args: ['--fix', '--exit-zero']
+      - id: ruff-format
+
+  # ===========================================
+  # Role-based review
+  # ===========================================
+  - repo: local
+    hooks:
+      - id: role-review
+        name: Role-based Code Review
+        entry: python scripts/role_review.py
+        language: python
+        types: [python]
+        pass_filenames: false
+
+  # ===========================================
+  # Commit message
+  # ===========================================
+  - repo: https://github.com/commitizen-tools/commitizen
+    rev: v3.28.0
+    hooks:
+      - id: commitizen
+        stages: [commit-msg]

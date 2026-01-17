@@ -1,0 +1,6 @@
+# Git submodules configuration
+# Add submodules with: git submodule add <url> packages/<name>
+# Example:
+# [submodule "packages/openai-template"]
+#     path = packages/openai-template
+#     url = https://github.com/yourname/openai-template.git

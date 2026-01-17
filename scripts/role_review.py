@@ -1,0 +1,265 @@
+#!/usr/bin/env python3
+"""Pre-commit role-based code review script."""
+
+from __future__ import annotations
+
+import ast
+import subprocess
+import sys
+from dataclasses import dataclass
+from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+
+@dataclass
+class Issue:
+    """Review issue found by a role."""
+
+    role: str
+    file: str
+    line: int
+    message: str
+
+
+def get_changed_files() -> list[Path]:
+    """Get list of staged Python files."""
+    result = subprocess.run(
+        ["git", "diff", "--cached", "--name-only", "--diff-filter=ACM"],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return [Path(f) for f in result.stdout.strip().split("\n") if f.endswith(".py")]
+
+
+def check_dev(file: Path, tree: ast.AST, lines: list[str]) -> list[Issue]:
+    """Developer role: basic code quality."""
+    issues: list[Issue] = []
+
+    if len(lines) > 200:
+        issues.append(
+            Issue("dev", str(file), 1, f"File too long: {len(lines)} > 200 lines")
+        )
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call):
+            if isinstance(node.func, ast.Name) and node.func.id == "print":
+                issues.append(
+                    Issue("dev", str(file), node.lineno, "Use logging instead of print()")
+                )
+
+        if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
+            func_lines = node.end_lineno - node.lineno + 1 if node.end_lineno else 0
+            if func_lines > 30:
+                issues.append(
+                    Issue(
+                        "dev",
+                        str(file),
+                        node.lineno,
+                        f"Function '{node.name}' too long: {func_lines} > 30 lines",
+                    )
+                )
+
+            if len(node.args.args) > 5:
+                issues.append(
+                    Issue(
+                        "dev",
+                        str(file),
+                        node.lineno,
+                        f"Function '{node.name}' has too many args: {len(node.args.args)} > 5",
+                    )
+                )
+
+    return issues
+
+
+def check_tester(file: Path, tree: ast.AST, lines: list[str]) -> list[Issue]:
+    """Tester role: test-related checks."""
+    issues: list[Issue] = []
+    is_test_file = file.name.startswith("test_") or "/tests/" in str(file)
+
+    if not is_test_file:
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Assert):
+                issues.append(
+                    Issue(
+                        "tester",
+                        str(file),
+                        node.lineno,
+                        "Avoid assert in production code, use exceptions",
+                    )
+                )
+
+    return issues
+
+
+def check_reviewer(file: Path, tree: ast.AST, lines: list[str]) -> list[Issue]:
+    """Reviewer role: code review standards."""
+    issues: list[Issue] = []
+
+    for i, line in enumerate(lines, 1):
+        stripped = line.strip()
+        if stripped.startswith("#") and any(
+            kw in stripped for kw in ["def ", "class ", "import ", "return "]
+        ):
+            issues.append(
+                Issue("reviewer", str(file), i, "Remove commented-out code")
+            )
+
+        if "TODO" in line and "TODO(" not in line:
+            issues.append(
+                Issue(
+                    "reviewer",
+                    str(file),
+                    i,
+                    "TODO must have author: TODO(username): message",
+                )
+            )
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
+            if node.name.startswith("_"):
+                continue
+            if node.returns is None and node.name != "__init__":
+                issues.append(
+                    Issue(
+                        "reviewer",
+                        str(file),
+                        node.lineno,
+                        f"Function '{node.name}' missing return type",
+                    )
+                )
+
+    return issues
+
+
+def check_best_practice(file: Path, tree: ast.AST, lines: list[str]) -> list[Issue]:
+    """Best practice role: security and patterns."""
+    issues: list[Issue] = []
+    secrets_patterns = ["password", "secret", "api_key", "apikey", "token", "credential"]
+
+    for i, line in enumerate(lines, 1):
+        lower = line.lower()
+        for pattern in secrets_patterns:
+            if pattern in lower and "=" in line and ('"' in line or "'" in line):
+                if "os.getenv" not in line and "environ" not in line:
+                    issues.append(
+                        Issue(
+                            "best_practice",
+                            str(file),
+                            i,
+                            f"Possible hardcoded secret: {pattern}",
+                        )
+                    )
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ExceptHandler) and node.type is None:
+            issues.append(
+                Issue(
+                    "best_practice",
+                    str(file),
+                    node.lineno,
+                    "Avoid bare except, catch specific exceptions",
+                )
+            )
+
+        if isinstance(node, ast.Call):
+            if isinstance(node.func, ast.Name) and node.func.id in ("eval", "exec"):
+                issues.append(
+                    Issue(
+                        "best_practice",
+                        str(file),
+                        node.lineno,
+                        f"Avoid {node.func.id}() — security risk",
+                    )
+                )
+
+    return issues
+
+
+def check_architect(file: Path, tree: ast.AST, lines: list[str]) -> list[Issue]:
+    """Architect role: structure and design."""
+    issues: list[Issue] = []
+    classes = [n for n in ast.walk(tree) if isinstance(n, ast.ClassDef)]
+
+    if len(classes) > 2:
+        issues.append(
+            Issue("architect", str(file), 1, f"Too many classes in file: {len(classes)} > 2")
+        )
+
+    for cls in classes:
+        methods = [
+            n for n in cls.body if isinstance(n, ast.FunctionDef | ast.AsyncFunctionDef)
+        ]
+        if len(methods) > 10:
+            issues.append(
+                Issue(
+                    "architect",
+                    str(file),
+                    cls.lineno,
+                    f"Class '{cls.name}' has too many methods: {len(methods)} > 10",
+                )
+            )
+
+    imports = [n for n in ast.walk(tree) if isinstance(n, ast.Import | ast.ImportFrom)]
+    if len(imports) > 15:
+        issues.append(
+            Issue(
+                "architect",
+                str(file),
+                1,
+                f"Too many imports: {len(imports)} — consider splitting module",
+            )
+        )
+
+    return issues
+
+
+ROLES: dict[str, Callable[[Path, ast.AST, list[str]], list[Issue]]] = {
+    "dev": check_dev,
+    "tester": check_tester,
+    "reviewer": check_reviewer,
+    "best_practice": check_best_practice,
+    "architect": check_architect,
+}
+
+
+def main() -> int:
+    """Run all role checks on staged files."""
+    files = get_changed_files()
+    if not files:
+        return 0
+
+    all_issues: list[Issue] = []
+
+    for file in files:
+        if not file.exists():
+            continue
+
+        content = file.read_text(encoding="utf-8")
+        lines = content.splitlines()
+
+        try:
+            tree = ast.parse(content)
+        except SyntaxError:
+            continue
+
+        for check_func in ROLES.values():
+            all_issues.extend(check_func(file, tree, lines))
+
+    if all_issues:
+        print("\n❌ Role Review Issues:\n")
+        for issue in sorted(all_issues, key=lambda x: (x.file, x.line)):
+            print(f"  [{issue.role}] {issue.file}:{issue.line} — {issue.message}")
+        print(f"\n{len(all_issues)} issue(s) found.\n")
+        return 1
+
+    print("✅ All role checks passed.")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

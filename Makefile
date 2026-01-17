@@ -1,0 +1,53 @@
+.PHONY: help install dev lint format type test test-cov security pre-commit clean
+
+PYTHON := python
+PIP := $(PYTHON) -m pip
+
+help:
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+
+install: ## Install production dependencies
+	$(PIP) install -e .
+
+dev: ## Install development dependencies
+	$(PIP) install -e ".[dev]"
+	pre-commit install
+	pre-commit install --hook-type commit-msg
+
+lint: ## Run linter
+	ruff check .
+
+format: ## Format code
+	ruff format .
+	ruff check --fix .
+
+type: ## Run type checker
+	mypy packages shared
+
+test: ## Run tests
+	pytest
+
+test-cov: ## Run tests with coverage
+	pytest --cov --cov-report=html --cov-fail-under=100
+
+security: ## Run security checks
+	bandit -r packages shared
+	detect-secrets scan
+
+pre-commit: ## Run all pre-commit hooks
+	pre-commit run --all-files
+
+clean: ## Clean cache files
+	rm -rf .pytest_cache .mypy_cache .ruff_cache htmlcov .coverage
+	find . -type d -name __pycache__ -exec rm -rf {} +
+	find . -type f -name "*.pyc" -delete
+
+submodule-add: ## Add submodule (URL=<url> NAME=<name>)
+	git submodule add $(URL) packages/$(NAME)
+	git submodule update --init --recursive
+
+submodule-update: ## Update all submodules
+	git submodule update --remote --merge
+
+submodule-init: ## Initialize all submodules
+	git submodule update --init --recursive
