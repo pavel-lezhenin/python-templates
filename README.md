@@ -4,9 +4,23 @@ Monorepo with templates for various Python APIs.
 
 ## 🚀 Quick Start
 
+**Unix/Linux/macOS:**
 ```bash
 # Clone with submodules
-git clone --recursive https://github.com/yourname/pyton-templates.git
+git clone --recursive https://github.com/pavel-lezhenin/pyton-templates.git
+
+# Install dependencies
+pip install -e ".[dev]"
+
+# Install pre-commit hooks
+pre-commit install
+pre-commit install --hook-type commit-msg
+```
+
+**Windows (PowerShell/CMD):**
+```powershell
+# Clone with submodules
+git clone --recursive https://github.com/pavel-lezhenin/pyton-templates.git
 
 # Install dependencies
 pip install -e ".[dev]"
