@@ -1,48 +1,48 @@
 # Python Templates
 
-> **Набор production-ready шаблонов и паттернов для разработки Python-приложений**
+> **Production-ready templates and patterns for Python application development**
 
-## 🎯 Назначение
+## 🎯 Purpose
 
-Этот репозиторий — коллекция готовых к использованию шаблонов, демонстрирующих:
+This repository is a collection of ready-to-use templates demonstrating:
 
-- **Архитектурные паттерны** — от простого CRUD до многослойной архитектуры
-- **Современные технологии** — FastAPI, MongoDB, Redis, Elasticsearch, WebSocket, SSE
-- **Best practices** — строгая типизация, 100% покрытие тестами, CI/CD, security checks
-- **Готовые решения** — можно использовать как основу для новых проектов
+- **Architecture patterns** — from simple CRUD to layered architecture
+- **Modern technologies** — FastAPI, MongoDB, Redis, Elasticsearch, WebSocket, SSE
+- **Best practices** — strict typing, 100% test coverage, CI/CD, security checks
+- **Production solutions** — can be used as foundation for new projects
 
-## 📦 Доступные шаблоны
+## 📦 Available Templates
 
 ### [fast-simple-crud](packages/fast-simple-crud)
 
-> **Простой FastAPI шаблон** — минимальный, но полноценный пример
+> **Simple FastAPI template** — minimal but complete example
 
-**Технологии:** FastAPI, Pydantic, SSE, WebSocket
+**Technologies:** FastAPI, Pydantic, SSE, WebSocket
 
-**Что демонстрирует:**
-- REST API с полным CRUD
-- Server-Sent Events (real-time обновления)
-- WebSocket (двусторонняя связь)
-- In-memory хранилище (легко заменить на БД)
+**Demonstrates:**
+- REST API with full CRUD
+- Server-Sent Events (real-time updates)
+- WebSocket (bidirectional communication)
+- In-memory storage (easily replaceable with DB)
 
-**Подходит для:** MVP, микросервисов, обучения FastAPI
+**Suitable for:** MVPs, microservices, FastAPI learning
 
 ---
 
 ### [arch-layer-prod-mongo-fast](packages/arch-layer-prod-mongo-fast)
 
-> **Production-ready слоистая архитектура** — полноценный enterprise-шаблон
+> **Production-ready layered architecture** — complete enterprise template
 
-**Технологии:** FastAPI, MongoDB (Beanie ODM), Redis, Elasticsearch
+**Technologies:** FastAPI, MongoDB (Beanie ODM), Redis, Elasticsearch
 
-**Что демонстрирует:**
-- Классическая 3-слойная архитектура (API → Services → Repositories)
-- Кэширование с Redis (TTL, инвалидация)
-- Полнотекстовый поиск с Elasticsearch
+**Demonstrates:**
+- Classic 3-tier architecture (API → Services → Repositories)
+- Caching with Redis (TTL, invalidation)
+- Full-text search with Elasticsearch
 - Dependency Injection
-- Docker Compose для локальной разработки
+- Docker Compose for local development
 
-**Подходит для:** Production-приложений, систем с высокой нагрузкой
+**Suitable for:** Production applications, high-load systems
 
 ---
 
@@ -174,38 +174,38 @@ python scripts/create_package.py "package-name" "Package description"
 python scripts/create_package.py "package-name" "Package description" --github
 ```
 
-## 📋 Стандарты кода
+## 📋 Code Standards
 
-- ✅ **Python 3.14** — последняя версия языка
-- ✅ **Strict typing** — mypy в строгом режиме
-- ✅ **100% test coverage** — обязательное покрытие тестами
-- ✅ **Auto-formatting** — ruff (линтер + форматтер)
+- ✅ **Python 3.14** — latest language version
+- ✅ **Strict typing** — mypy in strict mode
+- ✅ **100% test coverage** — mandatory test coverage
+- ✅ **Auto-formatting** — ruff (linter + formatter)
 - ✅ **Security** — detect-secrets, gitleaks, bandit
-- ✅ **Pre-commit hooks** — автоматические проверки при коммите
-- ✅ **Role-based review** — проверка кода с разных ролей (dev, reviewer, architect)
+- ✅ **Pre-commit hooks** — automatic checks on commit
+- ✅ **Role-based review** — code review from different roles (dev, reviewer, architect)
 
-## 📁 Структура
+## 📁 Structure
 
 ```
 python-templates/
-├── packages/                    # Шаблоны (git submodules)
-│   ├── fast-simple-crud/        # Простой CRUD + SSE + WebSocket
-│   └── arch-layer-prod-mongo-fast/  # Слоистая архитектура
-├── shared/                      # Общий код
-├── scripts/                     # Утилиты
-│   ├── create_package.py        # Создание нового пакета
-│   └── role_review.py           # Pre-commit проверка
+├── packages/                    # Templates (git submodules)
+│   ├── fast-simple-crud/        # Simple CRUD + SSE + WebSocket
+│   └── arch-layer-prod-mongo-fast/  # Layered architecture
+├── shared/                      # Shared code
+├── scripts/                     # Utilities
+│   ├── create_package.py        # Create new package
+│   └── role_review.py           # Pre-commit validation
 └── ...
 ```
 
-## 🔗 Использование
+## 🔗 Usage
 
-**Как отдельный пакет:**
+**As standalone package:**
 ```bash
 pip install git+https://github.com/pavel-lezhenin/fast-simple-crud.git
 ```
 
-**Как часть monorepo:**
+**As part of monorepo:**
 ```bash
 git clone --recursive https://github.com/pavel-lezhenin/python-templates.git
 ```
