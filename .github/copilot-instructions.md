@@ -7,6 +7,14 @@
 - Follow English grammar and spelling rules
 - Variable/function names in English (camelCase or snake_case)
 
+## Project Creation
+
+- **STRICT: Use CLI only** — never create packages manually
+- Always use: `python scripts/create_package.py <name> "<description>"`
+- Or via Makefile: `make new NAME=<name> DESC="<description>"`
+- With GitHub: `make new-github NAME=<name> DESC="<description>"`
+- This ensures all base configurations are applied automatically
+
 ## Python Paradigm
 
 - Use **Python 3.11+** features
