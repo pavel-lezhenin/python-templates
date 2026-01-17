@@ -4,3 +4,9 @@
 # [submodule "packages/openai-template"]
 #     path = packages/openai-template
 #     url = https://github.com/yourname/openai-template.git
+[submodule "packages/arch-layer-prod-mongo-fast"]
+	path = packages/arch-layer-prod-mongo-fast
+	url = https://github.com/pavel-lezhenin/arch-layer-prod-mongo-fast.git
+[submodule "packages/fast-simple-crud"]
+	path = packages/fast-simple-crud
+	url = https://github.com/pavel-lezhenin/fast-simple-crud.git
