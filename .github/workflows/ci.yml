@@ -113,13 +113,7 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install -e ".[dev]"
-          pip install -e "packages/api-template-example[dev]"
           pip install -e "packages/fast-simple-crud[dev]"
-
-      - name: Test api-template-example
-        run: |
-          cd packages/api-template-example
-          pytest --cov --cov-report=xml --cov-fail-under=100
 
       - name: Test fast-simple-crud
         run: |
