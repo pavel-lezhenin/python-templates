@@ -7,7 +7,7 @@ Monorepo with templates for various Python APIs.
 **Unix/Linux/macOS:**
 ```bash
 # Clone with submodules
-git clone --recursive https://github.com/pavel-lezhenin/pyton-templates.git
+git clone --recursive https://github.com/pavel-lezhenin/python-templates.git
 
 # Install dependencies
 pip install -e ".[dev]"
@@ -20,7 +20,7 @@ pre-commit install --hook-type commit-msg
 **Windows (PowerShell/CMD):**
 ```powershell
 # Clone with submodules
-git clone --recursive https://github.com/pavel-lezhenin/pyton-templates.git
+git clone --recursive https://github.com/pavel-lezhenin/python-templates.git
 
 # Install dependencies
 pip install -e ".[dev]"
@@ -141,7 +141,7 @@ python scripts/create_package.py "package-name" "Package description" --github
 ## 📁 Structure
 
 ```
-pyton-templates/
+python-templates/
 ├── packages/           # Child repositories (git submodules)
 ├── shared/             # Shared code
 ├── scripts/            # Utilities

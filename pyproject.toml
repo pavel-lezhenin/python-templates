@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "pyton-templates"
+name = "python-templates"
 version = "0.1.0"
 description = "Python API templates monorepo"
 readme = "README.md"

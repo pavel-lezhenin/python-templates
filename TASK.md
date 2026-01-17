@@ -39,7 +39,7 @@ Create a Python API templates monorepo with autonomous child packages.
 ## Created Files
 
 ```
-pyton-templates/
+python-templates/
 ├── .github/
 │   ├── copilot-instructions.md
 │   └── workflows/ci.yml
