@@ -190,3 +190,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: echo "✅ All checks passed!"
+
+  trigger-submodule-ci:
+    name: Trigger Submodule CI
+    needs: [all-checks]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Trigger arch-layer-prod-mongo-fast CI
+        run: |
+          curl -X POST \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/pavel-lezhenin/arch-layer-prod-mongo-fast/dispatches \
+            -d '{"event_type":"parent_repo_update","client_payload":{"sha":"${{ github.sha }}"}}'
+
+      - name: Trigger fast-simple-crud CI
+        run: |
+          curl -X POST \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/pavel-lezhenin/fast-simple-crud/dispatches \
+            -d '{"event_type":"parent_repo_update","client_payload":{"sha":"${{ github.sha }}"}}'
