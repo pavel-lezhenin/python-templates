@@ -25,7 +25,7 @@
 
 ## Python Paradigm
 
-- Use **Python 3.11+** features
+- Use **Python 3.14+** features
 - **Strict typing** everywhere: all functions, methods, variables
 - Use `from __future__ import annotations` in all files
 - Prefer `dataclass` or `pydantic.BaseModel` over plain dicts

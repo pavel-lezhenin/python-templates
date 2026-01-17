@@ -37,7 +37,11 @@ packages = ["shared"]
 source = ["packages", "shared"]
 branch = true
 parallel = true
-omit = ["**/tests/*", "**/__init__.py"]
+omit = [
+    "**/tests/*",
+    "**/__init__.py",
+    "**/main.py",
+]
 
 [tool.coverage.report]
 fail_under = 100

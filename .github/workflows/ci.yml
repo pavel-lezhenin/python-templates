@@ -55,8 +55,11 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install -e ".[dev]"
-          cd packages/api-template-example
-          pip install -e ".[dev]"
+          for dir in packages/*/; do
+            if [ -f "$dir/pyproject.toml" ]; then
+              pip install -e "$dir[dev]" || pip install -e "$dir"
+            fi
+          done
 
       - name: Run mypy
         run: mypy packages shared
@@ -86,23 +89,18 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  test:
-    name: Test (Python ${{ matrix.python-version }})
+  test-simple-packages:
+    name: Test Simple Packages
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.14"]
-
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
 
-      - name: Set up Python ${{ matrix.python-version }}
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: ${{ env.PYTHON_VERSION }}
           allow-prereleases: true
 
       - name: Cache pip
@@ -115,23 +113,110 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install -e ".[dev]"
+          pip install -e "packages/api-template-example[dev]"
+          pip install -e "packages/fast-simple-crud[dev]"
+
+      - name: Test api-template-example
+        run: |
           cd packages/api-template-example
+          pytest --cov --cov-report=xml --cov-fail-under=100
+
+      - name: Test fast-simple-crud
+        run: |
+          cd packages/fast-simple-crud
+          pytest --cov --cov-report=xml --cov-fail-under=100
+
+  test-arch-layer:
+    name: Test arch-layer-prod-mongo-fast
+    runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:7.0
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand(\"ping\")'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      elasticsearch:
+        image: docker.elastic.co/elasticsearch/elasticsearch:8.15.0
+        ports:
+          - 9200:9200
+        env:
+          discovery.type: single-node
+          xpack.security.enabled: "false"
+          ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+        options: >-
+          --health-cmd "curl -f http://localhost:9200/_cluster/health || exit 1"
+          --health-interval 30s
+          --health-timeout 10s
+          --health-retries 5
+
+    env:
+      MONGODB_URI: mongodb://localhost:27017
+      MONGODB_DATABASE: test_db
+      REDIS_URI: redis://localhost:6379
+      ELASTICSEARCH_URI: http://localhost:9200
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          allow-prereleases: true
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/pyproject.toml') }}
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
           pip install -e ".[dev]"
+          pip install -e "packages/arch-layer-prod-mongo-fast[dev]"
+
+      - name: Wait for services
+        run: |
+          echo "Waiting for MongoDB..."
+          timeout 60 bash -c 'until curl -s http://localhost:27017 > /dev/null 2>&1; do sleep 1; done' || true
+          echo "Waiting for Redis..."
+          timeout 30 bash -c 'until redis-cli -h localhost ping > /dev/null 2>&1; do sleep 1; done' || true
+          echo "Waiting for Elasticsearch..."
+          timeout 60 bash -c 'until curl -s http://localhost:9200/_cluster/health > /dev/null 2>&1; do sleep 1; done' || true
+          echo "All services ready!"
 
       - name: Run tests
         run: |
-          cd packages/api-template-example
+          cd packages/arch-layer-prod-mongo-fast
           pytest --cov --cov-report=xml --cov-fail-under=100
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4
         with:
-          files: ./packages/api-template-example/coverage.xml
+          files: ./packages/arch-layer-prod-mongo-fast/coverage.xml
           fail_ci_if_error: false
 
   all-checks:
     name: All Checks Passed
-    needs: [lint, type-check, security, test]
+    needs: [lint, type-check, security, test-simple-packages, test-arch-layer]
     runs-on: ubuntu-latest
     steps:
       - run: echo "✅ All checks passed!"

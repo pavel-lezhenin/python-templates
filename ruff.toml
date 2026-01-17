@@ -58,9 +58,11 @@ ignore = [
 ]
 
 [lint.per-file-ignores]
-"tests/**/*.py" = ["S101", "ANN", "D", "PLR2004", "EM", "TRY003"]
+"tests/**/*.py" = ["S101", "ANN", "D", "PLR2004", "EM", "TRY003", "PLR0913", "PLC0415", "ARG002", "TC001"]
 "scripts/**/*.py" = ["T20", "S101", "S607", "S603", "PLW1510", "PERF401", "E501", "Q001"]
 "**/__init__.py" = ["F401"]
+# FastAPI routes need runtime imports for dependency_overrides to work
+"**/routes.py" = ["TC001"]
 
 [lint.pydocstyle]
 convention = "google"
