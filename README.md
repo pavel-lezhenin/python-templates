@@ -1,6 +1,50 @@
-# Python API Templates Monorepo
+# Python Templates
 
-Monorepo with templates for various Python APIs.
+> **Набор production-ready шаблонов и паттернов для разработки Python-приложений**
+
+## 🎯 Назначение
+
+Этот репозиторий — коллекция готовых к использованию шаблонов, демонстрирующих:
+
+- **Архитектурные паттерны** — от простого CRUD до многослойной архитектуры
+- **Современные технологии** — FastAPI, MongoDB, Redis, Elasticsearch, WebSocket, SSE
+- **Best practices** — строгая типизация, 100% покрытие тестами, CI/CD, security checks
+- **Готовые решения** — можно использовать как основу для новых проектов
+
+## 📦 Доступные шаблоны
+
+### [fast-simple-crud](packages/fast-simple-crud)
+
+> **Простой FastAPI шаблон** — минимальный, но полноценный пример
+
+**Технологии:** FastAPI, Pydantic, SSE, WebSocket
+
+**Что демонстрирует:**
+- REST API с полным CRUD
+- Server-Sent Events (real-time обновления)
+- WebSocket (двусторонняя связь)
+- In-memory хранилище (легко заменить на БД)
+
+**Подходит для:** MVP, микросервисов, обучения FastAPI
+
+---
+
+### [arch-layer-prod-mongo-fast](packages/arch-layer-prod-mongo-fast)
+
+> **Production-ready слоистая архитектура** — полноценный enterprise-шаблон
+
+**Технологии:** FastAPI, MongoDB (Beanie ODM), Redis, Elasticsearch
+
+**Что демонстрирует:**
+- Классическая 3-слойная архитектура (API → Services → Repositories)
+- Кэширование с Redis (TTL, инвалидация)
+- Полнотекстовый поиск с Elasticsearch
+- Dependency Injection
+- Docker Compose для локальной разработки
+
+**Подходит для:** Production-приложений, систем с высокой нагрузкой
+
+---
 
 ## 🚀 Quick Start
 
@@ -130,20 +174,38 @@ python scripts/create_package.py "package-name" "Package description"
 python scripts/create_package.py "package-name" "Package description" --github
 ```
 
-## 📋 Standards
+## 📋 Стандарты кода
 
-- ✅ Strict typing (mypy strict)
-- ✅ 100% test coverage
-- ✅ Auto-formatting (ruff)
-- ✅ Secret detection (detect-secrets, gitleaks)
-- ✅ Role-based review (dev, tester, reviewer, best_practice, architect)
+- ✅ **Python 3.14** — последняя версия языка
+- ✅ **Strict typing** — mypy в строгом режиме
+- ✅ **100% test coverage** — обязательное покрытие тестами
+- ✅ **Auto-formatting** — ruff (линтер + форматтер)
+- ✅ **Security** — detect-secrets, gitleaks, bandit
+- ✅ **Pre-commit hooks** — автоматические проверки при коммите
+- ✅ **Role-based review** — проверка кода с разных ролей (dev, reviewer, architect)
 
-## 📁 Structure
+## 📁 Структура
 
 ```
 python-templates/
-├── packages/           # Child repositories (git submodules)
-├── shared/             # Shared code
-├── scripts/            # Utilities
+├── packages/                    # Шаблоны (git submodules)
+│   ├── fast-simple-crud/        # Простой CRUD + SSE + WebSocket
+│   └── arch-layer-prod-mongo-fast/  # Слоистая архитектура
+├── shared/                      # Общий код
+├── scripts/                     # Утилиты
+│   ├── create_package.py        # Создание нового пакета
+│   └── role_review.py           # Pre-commit проверка
 └── ...
+```
+
+## 🔗 Использование
+
+**Как отдельный пакет:**
+```bash
+pip install git+https://github.com/pavel-lezhenin/fast-simple-crud.git
+```
+
+**Как часть monorepo:**
+```bash
+git clone --recursive https://github.com/pavel-lezhenin/python-templates.git
 ```
