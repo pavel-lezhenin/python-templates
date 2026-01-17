@@ -11,6 +11,11 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Final
 
 
+# Fix Windows console encoding for Unicode characters
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[union-attr]
+
+
 if TYPE_CHECKING:
     from collections.abc import Callable
 
