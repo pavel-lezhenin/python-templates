@@ -186,10 +186,25 @@ jobs:
 
   all-checks:
     name: All Checks Passed
-    needs: [lint, type-check, security, test-simple-packages, test-arch-layer]
+    needs: [lint, type-check, security]
     runs-on: ubuntu-latest
     steps:
       - run: echo "✅ All checks passed!"
+
+  # Submodules have their own CI that runs when pushed directly to them
+  # Parent repo only checks integration and compatibility
+  check-submodules:
+    name: Check Submodule Status
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Verify submodules are on main/master
+        run: |
+          git submodule foreach 'git branch --contains HEAD | grep -E "main|master" || (echo "⚠️  Submodule $name is not on main/master branch" && exit 1)'
 
   trigger-submodule-ci:
     name: Trigger Submodule CI

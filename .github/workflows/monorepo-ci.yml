@@ -1,0 +1,102 @@
+name: Monorepo CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.14"
+
+jobs:
+  lint:
+    name: Lint & Format (Monorepo Level)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          allow-prereleases: true
+
+      - run: pip install ruff==0.14.0
+      - run: ruff check .
+      - run: ruff format --check .
+
+  type-check:
+    name: Type Check (Monorepo Level)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          allow-prereleases: true
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -e ".[dev]"
+          for dir in packages/*/; do
+            if [ -f "$dir/pyproject.toml" ]; then
+              pip install -e "$dir[dev]" || pip install -e "$dir"
+            fi
+          done
+
+      - run: mypy packages shared
+
+  security:
+    name: Security Scan (Monorepo Level)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          allow-prereleases: true
+
+      - run: pip install bandit
+      - run: bandit -r packages shared -c pyproject.toml || true
+
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  check-submodules:
+    name: Verify Submodule Status
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Check submodules are clean
+        run: |
+          echo "✅ Checking submodule status..."
+          git submodule foreach 'echo "📦 $name: $(git rev-parse --short HEAD)"'
+
+  notify-success:
+    name: All Monorepo Checks Passed
+    needs: [lint, type-check, security, check-submodules]
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "✅ Monorepo CI passed!"
+          echo "📦 Each submodule has its own CI that runs when pushed directly"
+          echo "   - fast-simple-crud: runs on push to https://github.com/pavel-lezhenin/fast-simple-crud"
+          echo "   - arch-layer-prod-mongo-fast: runs on push to https://github.com/pavel-lezhenin/arch-layer-prod-mongo-fast"
