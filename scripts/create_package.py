@@ -242,6 +242,8 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  repository_dispatch:
+    types: [parent_repo_update]
 
 env:
   PYTHON_VERSION: "$python_version"
@@ -255,7 +257,7 @@ jobs:
         with:
           python-version: $${{ env.PYTHON_VERSION }}
           allow-prereleases: true
-      - run: pip install ruff
+      - run: pip install ruff==0.14.0
       - run: ruff check .
       - run: ruff format --check .
 
@@ -267,6 +269,7 @@ jobs:
         with:
           python-version: $${{ env.PYTHON_VERSION }}
           allow-prereleases: true
+          cache: "pip"
       - run: pip install -e ".[dev]"
       - run: mypy src
 
@@ -274,13 +277,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - run: pip install bandit
       - run: bandit -r src -c pyproject.toml
       - uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: $${{ secrets.GITHUB_TOKEN }}
 
-  test:
+  unit-tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -288,15 +293,81 @@ jobs:
         with:
           python-version: $${{ env.PYTHON_VERSION }}
           allow-prereleases: true
+          cache: "pip"
       - name: Install dependencies
         run: pip install -e ".[dev]"
-      - name: Run tests
-        run: pytest --cov --cov-report=xml --cov-fail-under=80
-      - name: Upload coverage
+      - name: Run unit tests
+        env:
+          COVERAGE_FILE: .coverage.unit
+        run: coverage run -m pytest tests/unit -v -p no:cov
+      - name: Upload unit coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-unit
+          path: .coverage.unit
+          if-no-files-found: error
+          include-hidden-files: true
+
+  integration-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: $${{ env.PYTHON_VERSION }}
+          allow-prereleases: true
+          cache: "pip"
+      - name: Install dependencies
+        run: pip install -e ".[dev]"
+      - name: Run integration tests
+        env:
+          COVERAGE_FILE: .coverage.integration
+        run: coverage run -m pytest tests/integration -v -p no:cov
+      - name: Upload integration coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-integration
+          path: .coverage.integration
+          if-no-files-found: error
+          include-hidden-files: true
+
+  coverage:
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: $${{ env.PYTHON_VERSION }}
+          allow-prereleases: true
+      - name: Install coverage
+        run: pip install coverage[toml]
+      - name: Download unit coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-unit
+      - name: Download integration coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-integration
+      - name: Combine coverage
+        run: coverage combine
+      - name: Generate coverage report
+        run: |
+          coverage report --fail-under=80
+          coverage xml
+      - name: Upload combined coverage
         uses: codecov/codecov-action@v4
         with:
           files: ./coverage.xml
           fail_ci_if_error: false
+
+  notify-success:
+    runs-on: ubuntu-latest
+    needs: [lint, type-check, security, coverage]
+    if: success()
+    steps:
+      - run: echo "✅ All checks passed"
 """)
 
 README_TEMPLATE = Template("""\
