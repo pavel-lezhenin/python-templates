@@ -52,6 +52,19 @@ submodule-update: ## Update all submodules
 submodule-init: ## Initialize all submodules
 	git submodule update --init --recursive
 
+submodule-check: ## Check all submodules for uncommitted changes
+	@echo "Checking submodules for uncommitted changes..."
+	@git submodule foreach 'git status --short && test -z "$$(git status --short)" || (echo "❌ Uncommitted changes in $$name" && exit 1)'
+	@echo "✅ All submodules are clean"
+
+submodule-test: ## Run tests in all submodules
+	@echo "Running tests in all submodules..."
+	@git submodule foreach 'if [ -f pytest.ini ] || grep -q pytest pyproject.toml 2>/dev/null; then echo "Testing $$name..." && pytest; fi'
+
+submodule-lint: ## Run linting in all submodules
+	@echo "Running linting in all submodules..."
+	@git submodule foreach 'if [ -f pyproject.toml ]; then echo "Linting $$name..." && ruff check .; fi'
+
 # ===========================================
 # Package creation
 # ===========================================

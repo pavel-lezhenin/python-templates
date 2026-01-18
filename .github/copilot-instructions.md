@@ -15,6 +15,20 @@
 - With GitHub: `make new-github NAME=<name> DESC="<description>"`
 - This ensures all base configurations are applied automatically
 
+## Git Submodules Workflow
+
+- **STRICT: Commit submodules first, then parent repo** — never commit only parent
+- Each package in `packages/` is a separate git submodule
+- **Workflow:**
+  1. Make changes in submodule (e.g., `packages/arch-layer-prod-mongo-fast/`)
+  2. Commit and push changes **inside the submodule** first
+  3. Return to parent repo root (`cd ../../`)
+  4. Commit submodule reference update in parent repo
+  5. Push parent repo
+- **Before committing parent repo:** always run `make submodule-check` to verify all submodules are clean
+- **Never leave uncommitted changes** in submodules when updating parent
+- Each submodule has its own CI/CD that must pass before updating parent reference
+
 ## API Standards
 
 - **STRICT: OpenAPI/Swagger required** — every API service must have OpenAPI spec
