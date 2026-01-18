@@ -15,14 +15,26 @@ This monorepo uses **Independent CI** architecture where each package (git submo
 
 ### Parent Repository (`python-templates`)
 
-**Purpose:** Security scanning and submodule status verification only
+**Purpose:** Security scanning and orchestrating child CI workflows
 
 **CI Jobs:**
 - `security` — Run bandit and gitleaks on parent repo code
-- `check-submodules` — Verify all submodules are on latest commits
+- `trigger-submodules` — Send `repository_dispatch` events to all child repos
+- `wait-for-submodules` — Poll child repos and wait for CI completion
 - `notify-success` — Aggregate status notification
 
 **Location:** `.github/workflows/monorepo-ci.yml`
+
+**Requirements:**
+- `GH_PAT` secret with `repo` and `workflow` scopes
+- See [.github/SETUP.md](.github/SETUP.md) for setup instructions
+
+**Workflow:**
+1. Parent CI runs on push/PR
+2. Security job scans parent code only
+3. Trigger job sends repository_dispatch to each child
+4. Wait job polls child repos until their CI completes
+5. Notify job reports overall status
 
 **What it does NOT do:**
 - ❌ Lint submodule code
@@ -91,13 +103,40 @@ Each submodule CI runs on:
 
 ### Parent Triggering Children
 
-When parent repo updates, it can trigger submodule CI:
+When parent repo updates, it triggers child CI via `repository_dispatch`:
 
 ```yaml
-- name: Trigger submodule CI
+- name: Trigger child CI
   run: |
-    gh api repos/${{ github.repository }}/dispatches \
-      -f event_type=parent_repo_update
+    gh api repos/owner/child-repo/dispatches \
+      -f event_type=parent_repo_update \
+      -f client_payload[parent_run_id]=${{ github.run_id }}
+  env:
+    GH_TOKEN: ${{ secrets.GH_PAT }}
+```
+
+Parent then waits for child CI completion:
+
+```yaml
+- name: Wait for child CI
+  run: |
+    for i in {1..60}; do
+      status=$(gh api repos/owner/child-repo/actions/runs \
+        --jq '.workflow_runs[0].status')
+      if [[ "$status" == "completed" ]]; then
+        conclusion=$(gh api repos/owner/child-repo/actions/runs \
+          --jq '.workflow_runs[0].conclusion')
+        if [[ "$conclusion" == "success" ]]; then
+          echo "✅ Child CI passed"
+          break
+        else
+          exit 1
+        fi
+      fi
+      sleep 10
+    done
+  env:
+    GH_TOKEN: ${{ secrets.GH_PAT }}
 ```
 
 ## Creating New Packages

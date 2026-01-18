@@ -123,13 +123,17 @@ src/package_name/
 
 **Jobs:**
 - `security` — Security scanning (bandit + gitleaks) on parent code only
-- `check-submodules` — Verify all submodules are on latest commits
+- `trigger-submodules` — Trigger `repository_dispatch` events in all child repos
+- `wait-for-submodules` — Wait for child CI workflows to complete
 - `notify-success` — Aggregate status notification
 
 **Does NOT include:**
 - ❌ Linting submodule code
 - ❌ Type-checking submodule code
 - ❌ Running submodule tests
+
+**Requirements:**
+- `GH_PAT` secret with `repo` and `workflow` scopes (see `.github/SETUP.md`)
 
 ### Child Package CI (Submodules)
 

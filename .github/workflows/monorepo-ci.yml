@@ -15,12 +15,11 @@ env:
 
 jobs:
   security:
-    name: Security Scan (Monorepo Level)
+    name: Security Scan (Parent Repo Only)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: recursive
           fetch-depth: 0
 
       - uses: actions/setup-python@v5
@@ -29,34 +28,96 @@ jobs:
           allow-prereleases: true
 
       - run: pip install bandit
-      - run: bandit -r packages shared -c pyproject.toml || true
+      - run: bandit -r scripts shared -c pyproject.toml || true
 
       - uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  check-submodules:
-    name: Verify Submodule Status
+  trigger-submodules:
+    name: Trigger Child Repository CI
     runs-on: ubuntu-latest
+    needs: [security]
     steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Check submodules are clean
+      - name: Trigger fast-simple-crud CI
         run: |
-          echo "✅ Checking submodule status..."
-          git submodule foreach 'echo "📦 $name: $(git rev-parse --short HEAD)"'
+          gh api repos/pavel-lezhenin/fast-simple-crud/dispatches \
+            -f event_type=parent_repo_update \
+            -f client_payload[parent_run_id]=${{ github.run_id }}
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+
+      - name: Trigger arch-layer-prod-mongo-fast CI
+        run: |
+          gh api repos/pavel-lezhenin/arch-layer-prod-mongo-fast/dispatches \
+            -f event_type=parent_repo_update \
+            -f client_payload[parent_run_id]=${{ github.run_id }}
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+
+  wait-for-submodules:
+    name: Wait for Child CI Completion
+    runs-on: ubuntu-latest
+    needs: [trigger-submodules]
+    steps:
+      - name: Wait for fast-simple-crud CI
+        run: |
+          echo "⏳ Waiting for fast-simple-crud CI to complete..."
+          for i in {1..60}; do
+            status=$(gh api repos/pavel-lezhenin/fast-simple-crud/actions/runs \
+              --jq '.workflow_runs[0].status')
+            conclusion=$(gh api repos/pavel-lezhenin/fast-simple-crud/actions/runs \
+              --jq '.workflow_runs[0].conclusion')
+
+            if [[ "$status" == "completed" ]]; then
+              if [[ "$conclusion" == "success" ]]; then
+                echo "✅ fast-simple-crud CI passed"
+                break
+              else
+                echo "❌ fast-simple-crud CI failed: $conclusion"
+                exit 1
+              fi
+            fi
+
+            echo "  Status: $status (attempt $i/60)"
+            sleep 10
+          done
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+
+      - name: Wait for arch-layer-prod-mongo-fast CI
+        run: |
+          echo "⏳ Waiting for arch-layer-prod-mongo-fast CI to complete..."
+          for i in {1..60}; do
+            status=$(gh api repos/pavel-lezhenin/arch-layer-prod-mongo-fast/actions/runs \
+              --jq '.workflow_runs[0].status')
+            conclusion=$(gh api repos/pavel-lezhenin/arch-layer-prod-mongo-fast/actions/runs \
+              --jq '.workflow_runs[0].conclusion')
+
+            if [[ "$status" == "completed" ]]; then
+              if [[ "$conclusion" == "success" ]]; then
+                echo "✅ arch-layer-prod-mongo-fast CI passed"
+                break
+              else
+                echo "❌ arch-layer-prod-mongo-fast CI failed: $conclusion"
+                exit 1
+              fi
+            fi
+
+            echo "  Status: $status (attempt $i/60)"
+            sleep 10
+          done
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
 
   notify-success:
-    name: All Monorepo Checks Passed
-    needs: [security, check-submodules]
+    name: All CI Passed (Parent + Children)
+    needs: [wait-for-submodules]
     runs-on: ubuntu-latest
     steps:
       - run: |
-          echo "✅ Monorepo CI passed!"
-          echo "📦 Each submodule has its own Independent CI:"
-          echo "   - Submodules run lint, type-check, security, tests independently"
-          echo "   - Parent only runs security scan and verifies submodule status"
-          echo "   - fast-simple-crud: runs on push to https://github.com/pavel-lezhenin/fast-simple-crud"
-          echo "   - arch-layer-prod-mongo-fast: runs on push to https://github.com/pavel-lezhenin/arch-layer-prod-mongo-fast"
+          echo "✅ All CI checks passed!"
+          echo "📦 Parent: Security scan completed"
+          echo "📦 Children: All submodule CI workflows completed successfully"
+          echo "   - fast-simple-crud: https://github.com/pavel-lezhenin/fast-simple-crud/actions"
+          echo "   - arch-layer-prod-mongo-fast: https://github.com/pavel-lezhenin/arch-layer-prod-mongo-fast/actions"
