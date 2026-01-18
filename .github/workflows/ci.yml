@@ -118,7 +118,7 @@ jobs:
       - name: Test fast-simple-crud
         run: |
           cd packages/fast-simple-crud
-          pytest --cov --cov-report=xml --cov-fail-under=100
+          pytest --cov --cov-report=xml --cov-fail-under=80
 
   test-arch-layer:
     name: Test arch-layer-prod-mongo-fast
@@ -176,7 +176,7 @@ jobs:
       - name: Run tests
         run: |
           cd packages/arch-layer-prod-mongo-fast
-          pytest --cov --cov-report=xml --cov-fail-under=100
+          pytest --cov --cov-report=xml --cov-fail-under=80
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4

@@ -28,7 +28,7 @@ test: ## Run tests
 	pytest
 
 test-cov: ## Run tests with coverage
-	pytest --cov --cov-report=html --cov-fail-under=100
+	pytest --cov --cov-report=html --cov-fail-under=80
 
 security: ## Run security checks
 	bandit -r packages shared

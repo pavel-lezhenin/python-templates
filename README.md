@@ -116,7 +116,7 @@ python -m mypy packages shared
 python -m pytest
 
 # Tests with coverage
-python -m pytest --cov --cov-report=html --cov-fail-under=100
+python -m pytest --cov --cov-report=html --cov-fail-under=80
 
 # Security checks
 python -m bandit -r packages shared ; python -m detect_secrets scan
@@ -148,7 +148,7 @@ REM Run tests
 python -m pytest
 
 REM Tests with coverage
-python -m pytest --cov --cov-report=html --cov-fail-under=100
+python -m pytest --cov --cov-report=html --cov-fail-under=80
 
 REM Security checks
 python -m bandit -r packages shared && python -m detect_secrets scan
