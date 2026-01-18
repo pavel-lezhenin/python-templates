@@ -100,21 +100,19 @@ src/package_name/
 - Each directory has its own `conftest.py` with appropriate fixtures
 - Test file naming: `test_<module>.py`
 
-### Coverage Requirements
+## Coverage Requirements
 
 - **Minimum: 80%** (`fail_under = 80`) — CI fails below this
 - **Target: 90%** — aim for this in practice
-- **100% not always practical** — focus on critical paths and business logic
+- Focus on critical paths and business logic
 - Use fixtures, avoid duplication
-- One test file per source file structure
 
 ## CI/CD Architecture
 
 ### Independent CI Pattern
 
-- **Each submodule has its own complete CI pipeline** — lint, type-check, security, tests, coverage
-- **Parent repo runs minimal orchestration** — only security scan and submodule health checks
-- **No duplication** — parent does NOT run lint/type-check/tests for children
+- **Each submodule has its own complete CI** — lint, type-check, security, tests, coverage
+- **Parent runs minimal orchestration** — only security scan and submodule health checks
 - **Submodules are autonomous** — can be developed and tested independently
 
 ### Parent Repository CI (`python-templates`)
@@ -128,12 +126,10 @@ src/package_name/
 - `notify-success` — Aggregate status notification
 
 **Does NOT include:**
-- ❌ Linting submodule code
-- ❌ Type-checking submodule code
-- ❌ Running submodule tests
+- ❌ Linting/type-checking/testing submodule code
 
 **Requirements:**
-- `GH_PAT` secret with `repo` and `workflow` scopes (see `.github/SETUP.md`)
+- `GH_PAT` secret with `repo` and `workflow` scopes
 
 ### Child Package CI (Submodules)
 
@@ -179,13 +175,12 @@ make new-github NAME=<name> DESC="<description>"  # With GitHub repo
 
 1. **Commit submodules first, then parent** — Never update parent reference before pushing submodule
 2. **Separate unit/integration tests** — Different fixtures, different execution contexts
-3. **Use mocks in unit tests** — No external dependencies, fast execution
-4. **Use testcontainers in integration tests** — Real services, disposable containers
-5. **Cache pip dependencies** — Add `cache: "pip"` to setup-python steps
-6. **Always verify submodules clean** — Run `make submodule-check` before committing parent
-7. **Let submodule CI pass first** — Wait for green CI before updating parent reference
-
-### Terminology
+3. **Use mocks in unit tests** — No externa
+2. **Separate unit/integration tests**
+3. **Use mocks in unit tests**
+4. **Use testcontainers in integration tests**
+5. **Cache pip dependencies**
+6. **Run `make submodule-check` before committing parent**
 
 - **Parent Repository** — Main monorepo (`python-templates`) containing submodules
 - **Child Package / Submodule** — Individual package with independent git repository and CI

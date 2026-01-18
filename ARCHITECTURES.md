@@ -1,18 +1,16 @@
 # Python Architecture Patterns
 
-## 1. Layered Architecture (Слоистая архитектура)
+## 1. Layered Architecture
 
 Most popular for web applications and APIs.
 
 ```
 ┌─────────────────────────┐
-│   Presentation Layer    │  ← API endpoints, controllers
+│   API Layer             │
 ├─────────────────────────┤
-│    Business Layer       │  ← Services, use cases
+│   Business Layer        │
 ├─────────────────────────┤
-│   Data Access Layer     │  ← Repositories, ORM
-├─────────────────────────┤
-│      Database           │
+│   Data Access Layer     │
 └─────────────────────────┘
 ```
 
@@ -35,9 +33,9 @@ src/-
 
 ---
 
-## 2. Clean Architecture / Hexagonal (Чистая архитектура)
+## 2. Clean Architecture / Hexagonal
 
-For complex domains, microservices, and systems with many integrations.
+For complex domains and microservices.
 
 ```
          ┌──────────────────┐
@@ -45,11 +43,11 @@ For complex domains, microservices, and systems with many integrations.
          └────────┬─────────┘
                   │
     ┌─────────────▼─────────────┐
-    │        Adapters           │  ← Controllers, Repos impl
+    │      Adapters             │
     │   ┌───────────────────┐   │
-    │   │    Use Cases      │   │  ← Application logic
+    │   │   Use Cases       │   │
     │   │  ┌─────────────┐  │   │
-    │   │  │   Domain    │  │   │  ← Entities, business rules
+    │   │  │   Domain    │  │   │
     │   │  └─────────────┘  │   │
     │   └───────────────────┘   │
     └───────────────────────────┘
@@ -87,7 +85,7 @@ src/
 
 ---
 
-## 3. Modular Monolith (Модульный монолит)
+## 3. Modular Monolith
 
 For growing projects that may evolve into microservices.
 
@@ -96,18 +94,9 @@ src/
 ├── users/              # Independent module
 │   ├── api.py
 │   ├── service.py
-│   ├── repository.py
-│   └── models.py
-├── orders/             # Another independent module
-│   ├── api.py
-│   ├── service.py
-│   ├── repository.py
-│   └── models.py
-├── payments/           # Third module
-│   └── ...
-└── shared/             # Shared utilities
-    ├── database.py
-    └── exceptions.py
+│   └── repository.py
+├── orders/
+└── payments/
 ```
 
 ### Key principles

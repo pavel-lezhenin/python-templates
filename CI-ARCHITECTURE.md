@@ -2,13 +2,13 @@
 
 ## Overview
 
-This monorepo uses **Independent CI** architecture where each package (git submodule) has its own complete CI pipeline. The parent repository provides minimal orchestration.
+**Independent CI**: Each package (submodule) has its own complete CI pipeline. Parent provides minimal orchestration.
 
 ## Design Principles
 
-1. **Submodule Autonomy** — Each package can be developed and tested independently
-2. **No Duplication** — Parent repo does NOT run linting/type-checking for children
-3. **Clear Separation** — Parent handles security + submodule health, children handle full CI
+1. **Submodule Autonomy** — Each package can be developed/tested independently
+2. **No Duplication** — Parent does NOT run linting/type-checking for children
+3. **Clear Separation** — Parent: security + submodule health; Children: full CI
 4. **Standardization** — All packages use consistent CI structure
 
 ## Architecture Pattern
@@ -66,31 +66,15 @@ This monorepo uses **Independent CI** architecture where each package (git submo
 
 ## Test Structure
 
-Each package follows strict separation:
-
 ```
 tests/
 ├── unit/               # Fast tests, mocked dependencies
-│   ├── __init__.py
-│   ├── conftest.py    # Unit test fixtures (mocks, test data)
-│   └── test_*.py      # Unit tests
-└── integration/       # Real integration tests
-    ├── __init__.py
+│   ├── conftest.py    # Unit test fixtures
+│   └── test_*.py
+└── integration/        # Real integration tests
     ├── conftest.py    # Integration fixtures (testcontainers)
-    └── test_*.py      # Integration tests
+    └── test_*.py
 ```
-
-**Unit Tests:**
-- Use mocks, no real databases/services
-- Fast execution (< 1 second per test)
-- Test business logic in isolation
-- Example: `test_app` fixture without FastAPI lifespan
-
-**Integration Tests:**
-- Use testcontainers for real dependencies
-- Test actual integrations (MongoDB, Redis, Elasticsearch)
-- Slower execution (containers startup overhead)
-- Verify end-to-end functionality
 
 ## Triggering CI
 
@@ -264,29 +248,23 @@ git push
 
 ## Best Practices
 
-1. **Always separate unit/integration tests** — Different fixtures, different purposes
-2. **Run unit tests first** — Faster feedback, catch logic errors early
-3. **Use testcontainers for integration** — Real dependencies, disposable containers
-4. **Commit submodules first** — Never update parent reference before pushing submodule
-5. **Keep 80% coverage minimum** — Practical threshold, focus on critical paths
-6. **Use mocks in unit tests** — httpx_mock, pytest-mock for external calls
-7. **Document complex fixtures** — Help future maintainers understand test setup
-8. **Cache pip dependencies** — Add `cache: "pip"` to setup-python steps
+1. **Commit submodules first, then parent**
+2. **Separate unit/integration tests** — Different fixtures
+3. **Use testcontainers for integration**
+4. **Run `make submodule-check` before committing parent**
+5. **Keep 80% coverage minimum**
+6. **Cache pip dependencies** — `cache: "pip"` in setup-python
 
 ## Terminology
 
-- **Parent Repository** — Main monorepo (`python-templates`) containing submodules
-- **Child Package / Submodule** — Individual package with independent git repository
-- **Independent CI** — Each submodule has complete self-contained CI pipeline
-- **Unit Tests** — Isolated tests with mocked dependencies
-- **Integration Tests** — Tests with real external services (testcontainers)
+- **Parent Repository** — Main monorepo with submodules
+- **Child Package / Submodule** — Individual package with independent repo and CI
+- **Independent CI** — Each submodule has complete self-contained CI
 - **Coverage Artifacts** — `.coverage.*` files uploaded as GitHub artifacts
-- **Submodule Reference** — Git commit hash tracked by parent repo
 
 ## References
 
-- [GitHub Actions Documentation](https://docs.github.com/en/actions)
-- [pytest Documentation](https://docs.pytest.org/)
-- [coverage.py Documentation](https://coverage.readthedocs.io/)
+- [GitHub Actions](https://docs.github.com/en/actions)
+- [pytest](https://docs.pytest.org/)
+- [coverage.py](https://coverage.readthedocs.io/)
 - [testcontainers-python](https://testcontainers-python.readthedocs.io/)
-- [Git Submodules](https://git-scm.com/book/en/v2/Git-Tools-Submodules)
