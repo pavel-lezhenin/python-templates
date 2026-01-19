@@ -10,6 +10,28 @@
 2. **No Duplication** — Parent does NOT run linting/type-checking for children
 3. **Clear Separation** — Parent: security + submodule health; Children: full CI
 4. **Standardization** — All packages use consistent CI structure
+5. **Trunk-Based Development** — All changes via feature branches + Pull Requests
+
+## Pull Request Requirements (IRON RULES)
+
+> **No exceptions** — these rules apply to parent and ALL child repositories
+
+| Rule | Description |
+|------|-------------|
+| **No direct commits to `main`** | All changes go through Pull Requests |
+| **CI must pass before merge** | All status checks must be green |
+| **Branch protection enabled** | GitHub enforces these rules |
+| **Feature branches only** | Use `feature/<name>` naming convention |
+
+### Enforcement Layers
+
+1. **Local (pre-commit hook)** — `scripts/check_branch.py` blocks commits to `main`
+2. **Remote (GitHub)** — Branch protection rules reject direct pushes
+3. **AI (Copilot)** — Verifies feature branch before any work
+
+### Setup Instructions
+
+See [.github/BRANCH_PROTECTION.md](.github/BRANCH_PROTECTION.md) for step-by-step GitHub configuration.
 
 ## Architecture Pattern
 

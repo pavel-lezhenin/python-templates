@@ -7,6 +7,34 @@
 - Follow English grammar and spelling rules
 - Variable/function names in English (camelCase or snake_case)
 
+## Trunk-Based Development
+
+- **STRICT: Never work in `main` branch** — always create feature branch first
+- **STRICT: Before ANY work** — Copilot MUST verify current branch is NOT `main` or `master`
+- **STRICT: No direct commits to `main`** — all changes go through Pull Requests only
+- **Branch naming:** `feature/<short-description>` (kebab-case)
+- **Branch lifetime:** keep short, merge within 1-2 days
+- **Workflow:**
+  1. Create branch: `git checkout -b feature/<name>`
+  2. Make changes, commit frequently
+  3. Push and create Pull Request
+  4. Wait for CI checks to pass
+  5. Merge PR (squash or rebase)
+  6. Delete feature branch
+
+**Examples:**
+- `feature/add-user-auth`
+- `feature/fix-payment-validation`
+- `feature/update-ci-workflow`
+
+**Pre-work checklist (Copilot MUST verify):**
+```bash
+# Check current branch — MUST NOT be main or master
+git branch --show-current
+```
+
+**If in `main` branch:** STOP and create feature branch before proceeding.
+
 ## Project Creation
 
 - **STRICT: Use CLI only** — never create packages manually
@@ -18,14 +46,18 @@
 ## Git Submodules Workflow
 
 - **STRICT: Commit submodules first, then parent repo** — never commit only parent
-- **STRICT: Always use `main` branch** — never use `master`, all repos must use `main`
+- **STRICT: Always use `main` as default branch** — never use `master`, all repos must use `main`
+- **STRICT: Never commit directly to `main`** — use feature branches + Pull Requests
 - Each package in `packages/` is a separate git submodule
 - **Workflow:**
-  1. Make changes in submodule (e.g., `packages/arch-layer-prod-mongo-fast/`)
-  2. Commit and push changes **inside the submodule** first
-  3. Return to parent repo root (`cd ../../`)
-  4. Commit submodule reference update in parent repo
-  5. Push parent repo
+  1. Create feature branch in submodule: `git checkout -b feature/<name>`
+  2. Make changes in submodule (e.g., `packages/arch-layer-prod-mongo-fast/`)
+  3. Commit and push changes **inside the submodule** first
+  4. Create PR in submodule repo, wait for CI, merge
+  5. Return to parent repo root (`cd ../../`)
+  6. Create feature branch in parent: `git checkout -b feature/<name>`
+  7. Commit submodule reference update in parent repo
+  8. Create PR in parent repo, wait for CI, merge
 - **Before committing parent repo:** always run `make submodule-check` to verify all submodules are clean
 - **Never leave uncommitted changes** in submodules when updating parent
 - Each submodule has its own CI/CD that must pass before updating parent reference
