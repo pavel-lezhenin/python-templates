@@ -119,12 +119,42 @@ python-templates/
 │   ├── fast-simple-crud/        # Simple CRUD + SSE + WebSocket
 │   ├── arch-layer-prod-mongo-fast/  # Layered architecture
 │   └── arch-hexagonal-postgresql-fast/  # Hexagonal + Event-Driven
+├── templates/                   # Jinja2 templates for package generation
+│   ├── pyproject.toml.j2
+│   ├── .github/workflows/ci.yml.j2
+│   └── ...
 ├── shared/                      # Shared code
 ├── scripts/                     # Utilities
-│   ├── create_package.py        # Create new package
+│   ├── create_package.py        # Create new package (uses Jinja2)
 │   ├── check_branch.py          # Branch protection hook
 │   └── role_review.py           # Pre-commit validation
 └── ...
+```
+
+## 🧩 Template System
+
+Package generation uses **Jinja2** templates for maintainability:
+
+- **Location:** `templates/` directory
+- **Engine:** [Jinja2](https://jinja.palletsprojects.com/) — industry standard, IDE syntax highlighting
+- **Why Jinja2:**
+  - Separation of template content from Python code
+  - Native syntax highlighting in editors (`.j2` files)
+  - Conditionals and loops for future template customization
+  - `{% raw %}` blocks for GitHub Actions `${{ }}` expressions
+  - Active maintenance, extensive documentation
+
+**Modify templates:**
+```bash
+# Edit template
+vim templates/pyproject.toml.j2
+
+# Test generation
+python scripts/create_package.py test-pkg "Test" --no-git
+
+# Verify and cleanup
+ls packages/test-pkg/
+rm -rf packages/test-pkg
 ```
 
 ## 🔗 Usage
