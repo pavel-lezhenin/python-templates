@@ -47,6 +47,24 @@ This repository is a collection of ready-to-use templates demonstrating:
 
 ---
 
+### [arch-hexagonal-postgresql-fast](packages/arch-hexagonal-postgresql-fast)
+
+> **Event-Driven Hexagonal Payment Service** — production-ready payment processing
+
+**Technologies:** FastAPI, PostgreSQL, RabbitMQ, Redis
+
+**Demonstrates:**
+- Hexagonal Architecture (Ports & Adapters pattern)
+- Transactional Outbox — guaranteed event delivery
+- Idempotency Keys via Redis — prevents duplicate payments
+- Provider Abstraction — easily swap Stripe/PayPal/Adyen
+- Event-Driven — publishes lifecycle events to RabbitMQ
+- Domain-Driven Design with Value Objects and Entities
+
+**Suitable for:** Payment systems, multi-tenant platforms, regulated domains (finance)
+
+---
+
 ## 🚀 Quick Start
 
 ```bash
@@ -99,10 +117,12 @@ make new-github NAME=package-name DESC="Package description"  # With GitHub repo
 python-templates/
 ├── packages/                    # Templates (git submodules)
 │   ├── fast-simple-crud/        # Simple CRUD + SSE + WebSocket
-│   └── arch-layer-prod-mongo-fast/  # Layered architecture
+│   ├── arch-layer-prod-mongo-fast/  # Layered architecture
+│   └── arch-hexagonal-postgresql-fast/  # Hexagonal + Event-Driven
 ├── shared/                      # Shared code
 ├── scripts/                     # Utilities
 │   ├── create_package.py        # Create new package
+│   ├── check_branch.py          # Branch protection hook
 │   └── role_review.py           # Pre-commit validation
 └── ...
 ```
