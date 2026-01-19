@@ -43,6 +43,54 @@ git branch --show-current
 - With GitHub: `make new-github NAME=<name> DESC="<description>"`
 - This ensures all base configurations are applied automatically
 
+## Template System (Jinja2)
+
+- **Templates location:** `templates/` directory at repository root
+- **Engine:** Jinja2 (industry standard, syntax highlighting, conditionals)
+- **File naming:** `<filename>.j2` (e.g., `pyproject.toml.j2`)
+- **Variables:** use `{{ variable_name }}` syntax
+- **GitHub Actions:** wrap `${{ }}` expressions in `{% raw %}...{% endraw %}` blocks
+
+**Template structure:**
+```
+templates/
+├── pyproject.toml.j2
+├── .pre-commit-config.yaml.j2
+├── .gitignore.j2
+├── .secrets.baseline.j2
+├── .env.example.j2
+├── README.md.j2
+├── .github/
+│   └── workflows/
+│       └── ci.yml.j2
+├── src/
+│   ├── __init__.py.j2
+│   └── client.py.j2
+└── tests/
+    ├── unit/
+    │   ├── conftest.py.j2
+    │   └── test_client.py.j2
+    └── integration/
+        └── conftest.py.j2
+```
+
+**Available variables:**
+| Variable | Example | Description |
+|----------|---------|-------------|
+| `package_name` | `openai-client` | Package name with hyphens |
+| `module_name` | `openai_client` | Python module name (underscores) |
+| `module_upper` | `OPENAI_CLIENT` | Uppercase for env vars |
+| `description` | `OpenAI API client` | User-provided description |
+| `python_version` | `3.14` | Python version |
+| `python_version_short` | `py314` | Short version for ruff |
+| `ruff_version` | `v0.14.0` | Ruff pre-commit hook version |
+
+**When modifying templates:**
+1. Edit `.j2` file in `templates/` directory
+2. Test with: `python scripts/create_package.py test-pkg "Test package" --no-git`
+3. Verify generated files
+4. Remove test package: `rm -rf packages/test-pkg`
+
 ## Git Submodules Workflow
 
 - **STRICT: Commit submodules first, then parent repo** — never commit only parent
