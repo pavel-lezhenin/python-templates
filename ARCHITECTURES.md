@@ -129,6 +129,71 @@ src/
 
 ---
 
+## Example Implementations
+
+### 1. Layered Architecture
+**Package**: `arch-layer-prod-mongo-fast`
+
+**Stack**: FastAPI + MongoDB + Redis + Elasticsearch + RabbitMQ
+
+**Structure**:
+```
+src/arch_layer_prod_mongo_fast/
+├── api/              # FastAPI routes
+├── services/         # Business logic
+├── repositories/     # Data access (MongoDB, Redis, Elasticsearch)
+├── models/           # Pydantic models
+└── middleware/       # Logging, auth
+```
+
+**Use case**: Product catalog service with caching and search
+
+**Features**:
+- Transparent caching (Redis)
+- Full-text search (Elasticsearch)
+- Event logging (RabbitMQ)
+- Observability (Loki + Grafana)
+
+---
+
+### 2. Hexagonal Architecture
+**Package**: `arch-hexagonal-postgresql-fast`
+
+**Stack**: FastAPI + PostgreSQL + Stripe/PayPal + RabbitMQ + Redis
+
+**Structure**:
+```
+src/arch_hexagonal_postgresql_fast/
+├── domain/           # Pure business logic (no deps)
+│   ├── entities/     # Payment, Transaction, Customer
+│   └── value_objects/ # Amount, Status, PaymentMethod
+├── application/      # Use cases + ports (interfaces)
+│   ├── ports/        # Repository, Provider, EventPublisher
+│   └── use_cases/    # ProcessPayment, RefundPayment
+└── adapters/         # Infrastructure implementations
+    ├── database/     # PostgreSQL (SQLAlchemy)
+    ├── payment_providers/ # Stripe, PayPal
+    ├── messaging/    # RabbitMQ
+    └── api/          # FastAPI
+```
+
+**Use case**: Payment processing service with multiple providers
+
+**Features**:
+- Multiple payment providers (Stripe, PayPal)
+- Idempotency guarantees (Redis)
+- Event-driven (RabbitMQ)
+- ACID transactions (PostgreSQL)
+- Full hexagonal pattern implementation
+
+**Key differences from Layered**:
+- Domain layer has zero external dependencies
+- Ports (interfaces) defined with `typing.Protocol`
+- Easy to swap implementations (e.g., add new payment provider)
+- Use cases orchestrate domain logic without infrastructure concerns
+
+---
+
 ## Python-Specific Recommendations
 
 ### Use these tools
