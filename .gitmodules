@@ -10,3 +10,6 @@
 [submodule "packages/fast-simple-crud"]
 	path = packages/fast-simple-crud
 	url = https://github.com/pavel-lezhenin/fast-simple-crud.git
+[submodule "packages/arch-hexagonal-postgresql-fast"]
+	path = packages/arch-hexagonal-postgresql-fast
+	url = https://github.com/pavel-lezhenin/arch-hexagonal-postgresql-fast.git
