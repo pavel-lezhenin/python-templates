@@ -18,6 +18,7 @@
 ## Git Submodules Workflow
 
 - **STRICT: Commit submodules first, then parent repo** — never commit only parent
+- **STRICT: Always use `main` branch** — never use `master`, all repos must use `main`
 - Each package in `packages/` is a separate git submodule
 - **Workflow:**
   1. Make changes in submodule (e.g., `packages/arch-layer-prod-mongo-fast/`)
@@ -28,6 +29,7 @@
 - **Before committing parent repo:** always run `make submodule-check` to verify all submodules are clean
 - **Never leave uncommitted changes** in submodules when updating parent
 - Each submodule has its own CI/CD that must pass before updating parent reference
+- **If creating repo manually:** use `git init --initial-branch=main` and set GitHub default branch to `main`
 
 ## API Standards
 

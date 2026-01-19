@@ -695,7 +695,12 @@ def _write_package_files(package_dir: Path, template_vars: dict[str, str]) -> No
 def _init_git_repo(package_dir: Path) -> None:
     """Initialize git repository with initial commit."""
     print("\nInitializing git repository...")
-    subprocess.run(["git", "init"], cwd=package_dir, check=True, capture_output=True)
+    subprocess.run(
+        ["git", "init", "--initial-branch=main"],
+        cwd=package_dir,
+        check=True,
+        capture_output=True,
+    )
     subprocess.run(
         ["git", "add", "-A"], cwd=package_dir, check=True, capture_output=True
     )
@@ -705,7 +710,7 @@ def _init_git_repo(package_dir: Path) -> None:
         check=True,
         capture_output=True,
     )
-    print("  Git initialized with initial commit")
+    print("  Git initialized with initial commit (branch: main)")
 
 
 def _create_github_and_submodule(
@@ -733,6 +738,14 @@ def _create_github_and_submodule(
         return False
 
     print(f"  GitHub repository created: {github_url}")
+
+    # Ensure default branch is 'main' on GitHub
+    subprocess.run(
+        ["gh", "repo", "edit", f"{github_user}/{name}", "--default-branch", "main"],
+        cwd=package_dir,
+        capture_output=True,
+    )
+    print("  Default branch set to 'main'")
 
     # Remove local .git and re-add as submodule
     print("\nRegistering as git submodule...")
