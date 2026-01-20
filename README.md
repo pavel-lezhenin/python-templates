@@ -65,6 +65,25 @@ This repository is a collection of ready-to-use templates demonstrating:
 
 ---
 
+### [arch-modular-saas-django](packages/arch-modular-saas-django)
+
+> **Modular Monolith SaaS Backend** — Django reference implementation
+
+**Technologies:** Django 5.1, DRF, PostgreSQL, Redis, MinIO, Celery
+
+**Demonstrates:**
+- Modular Monolith pattern (vertical slices vs horizontal layers)
+- 5 bounded contexts: Tenants, Auth, Members, Billing, Features
+- Inter-module communication via Services + Django Signals
+- Multi-tenancy with tenant context middleware
+- RBAC (Owner → Admin → Member hierarchy)
+- Feature flags with plan-based restrictions
+- Graceful degradation (works without Stripe, OAuth, external email)
+
+**Suitable for:** SaaS products, multi-tenant platforms, teams 2-20 developers
+
+---
+
 ## 🚀 Quick Start
 
 ```bash
@@ -118,7 +137,8 @@ python-templates/
 ├── packages/                    # Templates (git submodules)
 │   ├── fast-simple-crud/        # Simple CRUD + SSE + WebSocket
 │   ├── arch-layer-prod-mongo-fast/  # Layered architecture
-│   └── arch-hexagonal-postgresql-fast/  # Hexagonal + Event-Driven
+│   ├── arch-hexagonal-postgresql-fast/  # Hexagonal + Event-Driven
+│   └── arch-modular-saas-django/  # Modular Monolith + Django
 ├── templates/                   # Jinja2 templates for package generation
 │   ├── pyproject.toml.j2
 │   ├── .github/workflows/ci.yml.j2
