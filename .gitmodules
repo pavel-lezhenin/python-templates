@@ -13,3 +13,6 @@
 [submodule "packages/arch-hexagonal-postgresql-fast"]
 	path = packages/arch-hexagonal-postgresql-fast
 	url = https://github.com/pavel-lezhenin/arch-hexagonal-postgresql-fast.git
+[submodule "packages/arch-modular-saas-django"]
+	path = packages/arch-modular-saas-django
+	url = https://github.com/pavel-lezhenin/arch-modular-saas-django.git
